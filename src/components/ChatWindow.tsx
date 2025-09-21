@@ -3,7 +3,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { Send, MoreVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 
@@ -20,6 +22,8 @@ interface ChatWindowProps {
   messages: Message[];
   currentUser: string;
   onSendMessage: (message: string) => void;
+  onDeleteChat: () => void;
+  onDeleteMessage: (messageId: string, deleteForEveryone?: boolean) => void;
   isTyping: boolean;
 }
 
@@ -28,6 +32,8 @@ export const ChatWindow = ({
   messages, 
   currentUser, 
   onSendMessage,
+  onDeleteChat,
+  onDeleteMessage,
   isTyping 
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
@@ -83,9 +89,19 @@ export const ChatWindow = ({
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm">
-          <MoreVertical className="w-4 h-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onDeleteChat} className="text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Chat
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages Area */}
@@ -109,20 +125,42 @@ export const ChatWindow = ({
                 </Avatar>
               )}
               
-              <div className={cn(
-                "max-w-[70%] rounded-2xl px-4 py-2 smooth-transition",
-                message.isOwn 
-                  ? "message-sent text-white" 
-                  : "bg-chat-received text-chat-received-foreground"
-              )}>
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <p className={cn(
-                  "text-xs mt-1 opacity-70",
-                  message.isOwn ? "text-white/70" : "text-muted-foreground"
-                )}>
-                  {formatTime(message.timestamp)}
-                </p>
-              </div>
+              <ContextMenu>
+                <ContextMenuTrigger>
+                  <div className={cn(
+                    "max-w-[70%] rounded-2xl px-4 py-2 smooth-transition cursor-pointer",
+                    message.isOwn 
+                      ? "message-sent text-white" 
+                      : "bg-chat-received text-chat-received-foreground"
+                  )}>
+                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    <p className={cn(
+                      "text-xs mt-1 opacity-70",
+                      message.isOwn ? "text-white/70" : "text-muted-foreground"
+                    )}>
+                      {formatTime(message.timestamp)}
+                    </p>
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem 
+                    onClick={() => onDeleteMessage(message.id, false)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete for me
+                  </ContextMenuItem>
+                  {message.isOwn && (
+                    <ContextMenuItem 
+                      onClick={() => onDeleteMessage(message.id, true)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete for everyone
+                    </ContextMenuItem>
+                  )}
+                </ContextMenuContent>
+              </ContextMenu>
             </div>
           ))}
           

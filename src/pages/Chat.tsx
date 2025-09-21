@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { Friend } from "@/components/FriendList";
+import { useToast } from "@/hooks/use-toast";
 
 // Same friends data - in real app this would come from a context or API
 const friends: Friend[] = [
@@ -66,6 +67,7 @@ const Chat = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
 
   const friend = friends.find(f => f.id === friendId);
 
@@ -151,6 +153,34 @@ const Chat = () => {
     navigate("/home");
   };
 
+  const handleDeleteChat = () => {
+    if (!friendId) return;
+    
+    setMessages(prev => ({
+      ...prev,
+      [friendId]: []
+    }));
+    
+    toast({
+      title: "Chat deleted",
+      description: "All messages have been deleted.",
+    });
+  };
+
+  const handleDeleteMessage = (messageId: string, deleteForEveryone?: boolean) => {
+    if (!friendId) return;
+    
+    setMessages(prev => ({
+      ...prev,
+      [friendId]: prev[friendId]?.filter(msg => msg.id !== messageId) || []
+    }));
+    
+    toast({
+      title: "Message deleted",
+      description: deleteForEveryone ? "Message deleted for everyone." : "Message deleted for you.",
+    });
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem("currentUser");
     navigate("/");
@@ -204,6 +234,8 @@ const Chat = () => {
           messages={messages[friendId!] || []}
           currentUser={currentUser}
           onSendMessage={handleSendMessage}
+          onDeleteChat={handleDeleteChat}
+          onDeleteMessage={handleDeleteMessage}
           isTyping={isTyping}
         />
       </div>
