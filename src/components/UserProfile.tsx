@@ -26,8 +26,8 @@ export const UserProfile = () => {
     if (user) {
       setCurrentUser(user);
       setFormData({
-        displayName: user.displayName,
-        username: user.username,
+        displayName: user.displayName || "",
+        username: user.username || "",
         email: user.email || "",
         bio: user.bio || ""
       });
@@ -75,12 +75,12 @@ export const UserProfile = () => {
             <Avatar className="w-16 h-16">
               <AvatarImage src={currentUser.avatar} />
               <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                {currentUser.displayName.slice(0, 2).toUpperCase()}
+                {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{currentUser.displayName}</p>
-              <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
+              <p className="font-medium">{currentUser.displayName || 'Unknown User'}</p>
+              <p className="text-sm text-muted-foreground">@{currentUser.username || 'unknown'}</p>
               <p className="text-xs text-muted-foreground">ID: {currentUser.id}</p>
             </div>
           </div>
