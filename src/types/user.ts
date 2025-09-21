@@ -7,6 +7,7 @@ export interface User {
   isOnline: boolean;
   lastSeen?: Date;
   bio?: string;
+  createdAt?: any;
 }
 
 export interface FriendRequest {

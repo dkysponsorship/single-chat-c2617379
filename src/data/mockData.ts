@@ -60,17 +60,13 @@ export const getCurrentUser = (): User | null => {
   if (!userStr) return null;
   
   try {
-    // Try to parse as JSON (new format)
     const savedUser = JSON.parse(userStr);
-    if (savedUser && typeof savedUser === 'object' && savedUser.username) {
-      return mockUsers.find(u => u.username === savedUser.username || u.id === savedUser.id) || null;
-    } else {
-      // Handle old format (plain string username)
-      return mockUsers.find(u => u.username === userStr) || null;
-    }
+    // Return the full user object stored in sessionStorage
+    return savedUser;
   } catch (error) {
-    // If JSON.parse fails, treat it as old format (plain string username)
-    return mockUsers.find(u => u.username === userStr) || null;
+    // If JSON.parse fails, clear the invalid data
+    sessionStorage.removeItem("currentUser");
+    return null;
   }
 };
 

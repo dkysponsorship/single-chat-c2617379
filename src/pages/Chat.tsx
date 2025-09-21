@@ -3,191 +3,122 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
-import { Friend } from "@/components/FriendList";
+import { getCurrentUser } from "@/data/mockData";
+import { sendMessage, getMessages, createChatId, deleteMessage, deleteChat, logoutUser } from "@/services/firebase";
+import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
-// Same friends data - in real app this would come from a context or API
-const friends: Friend[] = [
-  {
-    id: "1",
-    name: "Alice Johnson",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
-    isOnline: true,
-    lastMessage: "Hey! How are you doing?",
-    unreadCount: 2
-  },
-  {
-    id: "2",
-    name: "Bob Smith", 
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
-    isOnline: true,
-    lastMessage: "Let's meet tomorrow!",
-    unreadCount: 1
-  },
-  {
-    id: "3",
-    name: "Carol Davis",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carol",
-    isOnline: false,
-    lastMessage: "Thanks for the help 😊"
-  },
-  {
-    id: "4",
-    name: "David Wilson",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-    isOnline: true,
-    lastMessage: "Great job on the project!"
-  },
-  {
-    id: "5",
-    name: "Emma Brown",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
-    isOnline: false,
-    lastMessage: "See you later!"
-  }
-];
-
-// Sample auto-replies for simulation
-const autoReplies = [
-  "That's awesome! 😊",
-  "Thanks for letting me know!",
-  "Sounds good to me!",
-  "I'll get back to you soon.",
-  "Great idea!",
-  "Let me think about it.",
-  "Absolutely!",
-  "I'm on it! 💪",
-  "That works for me.",
-  "Looking forward to it!"
-];
-
 const Chat = () => {
-  const [currentUser, setCurrentUser] = useState<string>("");
   const { friendId } = useParams<{ friendId: string }>();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [friend, setFriend] = useState<User | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
 
-  const friend = friends.find(f => f.id === friendId);
-
   useEffect(() => {
-    const user = sessionStorage.getItem("currentUser");
+    const user = getCurrentUser();
     if (!user) {
       navigate("/");
-    } else {
-      setCurrentUser(user);
+      return;
     }
-  }, [navigate]);
-
-  // Initialize with some sample messages
-  useEffect(() => {
-    if (!currentUser) return;
     
-    const sampleMessages: Record<string, Message[]> = {
-      "1": [
-        {
-          id: "1",
-          text: "Hey! How are you doing?",
-          sender: "Alice Johnson",
-          timestamp: new Date(Date.now() - 300000),
-          isOwn: false
-        },
-        {
-          id: "2",
-          text: "I'm doing great, thanks for asking!",
-          sender: currentUser,
-          timestamp: new Date(Date.now() - 240000),
-          isOwn: true
-        }
-      ],
-      "2": [
-        {
-          id: "1",
-          text: "Let's meet tomorrow!",
-          sender: "Bob Smith",
-          timestamp: new Date(Date.now() - 600000),
-          isOwn: false
-        }
-      ]
-    };
-    setMessages(sampleMessages);
-  }, [currentUser]);
-
-  const handleSendMessage = (messageText: string) => {
-    if (!friendId || !friend || !currentUser) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: messageText,
-      sender: currentUser,
-      timestamp: new Date(),
-      isOwn: true
-    };
-
-    setMessages(prev => ({
-      ...prev,
-      [friendId]: [...(prev[friendId] || []), newMessage]
-    }));
-
-    // Simulate auto-reply with typing indicator
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const autoReply: Message = {
-        id: (Date.now() + 1).toString(),
-        text: autoReplies[Math.floor(Math.random() * autoReplies.length)],
-        sender: friend.name,
-        timestamp: new Date(),
-        isOwn: false
+    setCurrentUser(user);
+    
+    if (friendId) {
+      // In a real app, you'd fetch friend data from Firebase
+      // For now, we'll create a mock friend based on friendId
+      const mockFriend: User = {
+        id: friendId,
+        username: `user_${friendId}`,
+        displayName: `Friend ${friendId.slice(0, 8)}`,
+        email: `friend${friendId}@example.com`,
+        isOnline: Math.random() > 0.5,
+        bio: "Firebase user"
       };
+      setFriend(mockFriend);
+      
+      // Setup real-time message listening
+      const chatId = createChatId(user.id, friendId);
+      const unsubscribe = getMessages(chatId, (newMessages) => {
+        setMessages(newMessages);
+      });
+      
+      return unsubscribe;
+    }
+  }, [friendId, navigate]);
 
-      setMessages(prev => ({
-        ...prev,
-        [friendId]: [...(prev[friendId] || []), autoReply]
-      }));
-    }, 1500 + Math.random() * 2000);
+  const handleSendMessage = async (messageText: string) => {
+    if (!currentUser || !friendId || !messageText.trim()) return;
+    
+    const chatId = createChatId(currentUser.id, friendId);
+    const success = await sendMessage(chatId, currentUser.id, messageText.trim());
+    
+    if (!success) {
+      toast({
+        title: "Failed to send message",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string, deleteForEveryone?: boolean) => {
+    if (!currentUser || !friendId) return;
+    
+    const chatId = createChatId(currentUser.id, friendId);
+    const success = await deleteMessage(chatId, messageId);
+    
+    if (success) {
+      toast({
+        title: "Message deleted",
+        description: deleteForEveryone ? "Message deleted for everyone." : "Message deleted for you.",
+      });
+    } else {
+      toast({
+        title: "Failed to delete message",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!currentUser || !friendId) return;
+    
+    const chatId = createChatId(currentUser.id, friendId);
+    const success = await deleteChat(chatId);
+    
+    if (success) {
+      toast({
+        title: "Chat deleted",
+        description: "The entire chat has been deleted.",
+      });
+      navigate("/home");
+    } else {
+      toast({
+        title: "Failed to delete chat",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBack = () => {
     navigate("/home");
   };
 
-  const handleDeleteChat = () => {
-    if (!friendId) return;
-    
-    setMessages(prev => ({
-      ...prev,
-      [friendId]: []
-    }));
-    
-    toast({
-      title: "Chat deleted",
-      description: "All messages have been deleted.",
-    });
-  };
-
-  const handleDeleteMessage = (messageId: string, deleteForEveryone?: boolean) => {
-    if (!friendId) return;
-    
-    setMessages(prev => ({
-      ...prev,
-      [friendId]: prev[friendId]?.filter(msg => msg.id !== messageId) || []
-    }));
-    
-    toast({
-      title: "Message deleted",
-      description: deleteForEveryone ? "Message deleted for everyone." : "Message deleted for you.",
-    });
-  };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutUser();
     sessionStorage.removeItem("currentUser");
     navigate("/");
   };
 
   if (!currentUser) {
-    return null; // Loading or redirecting
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <p className="text-muted-foreground">Loading...</p>
+    </div>;
   }
 
   if (!friend) {
@@ -204,6 +135,15 @@ const Chat = () => {
     );
   }
 
+  // Convert Firebase messages to ChatWindow format
+  const formattedMessages: Message[] = messages.map(msg => ({
+    id: msg.id,
+    text: msg.message,
+    sender: msg.senderId === currentUser.id ? currentUser.displayName : friend.displayName,
+    timestamp: new Date(msg.timestamp || Date.now()),
+    isOwn: msg.senderId === currentUser.id
+  }));
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Navigation */}
@@ -213,13 +153,13 @@ const Chat = () => {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h1 className="text-lg font-semibold">
-            Chat with {friend.name}
+            Chat with {friend.displayName}
           </h1>
         </div>
         
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground hidden sm:block">
-            {currentUser}
+            {currentUser.displayName}
           </span>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
@@ -230,9 +170,16 @@ const Chat = () => {
       {/* Chat Window */}
       <div className="flex-1">
         <ChatWindow
-          friend={friend}
-          messages={messages[friendId!] || []}
-          currentUser={currentUser}
+          friend={{
+            id: friend.id,
+            name: friend.displayName,
+            avatar: friend.avatar,
+            isOnline: friend.isOnline,
+            lastMessage: "",
+            unreadCount: 0
+          }}
+          messages={formattedMessages}
+          currentUser={currentUser.displayName}
           onSendMessage={handleSendMessage}
           onDeleteChat={handleDeleteChat}
           onDeleteMessage={handleDeleteMessage}

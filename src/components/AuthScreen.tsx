@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { MessageCircle } from "lucide-react";
-import { getUserByUsername } from "@/data/mockData";
+import { registerUser, loginUser } from "@/services/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthScreenProps {
-  onLogin: (username: string, userId: string) => void;
+  onLogin: (user: any) => void;
 }
 
 export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
@@ -19,44 +19,54 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isLogin) {
-      // Login flow - more flexible for testing
-      const user = getUserByUsername(username.trim());
+      // Login flow
+      if (!email.trim() || !password.trim()) {
+        toast({
+          title: "Login failed",
+          description: "Please enter email and password.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { user, error } = await loginUser(email.trim(), password);
       if (user) {
-        onLogin(user.username, user.id);
+        onLogin(user);
       } else {
-        // For testing mode, allow any username to login as a demo user
-        if (username.trim()) {
-          toast({
-            title: "Demo Login",
-            description: `Logging in as demo user: ${username.trim()}`,
-          });
-          onLogin(username.trim(), `demo_${Date.now()}`);
-        } else {
-          toast({
-            title: "Login failed",
-            description: "Please enter a username or select from test users above.",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Login failed",
+          description: error || "Invalid email or password.",
+          variant: "destructive",
+        });
       }
     } else {
-      // Register flow - for demo, we'll just simulate registration
-      if (username.trim() && displayName.trim()) {
-        const existingUser = getUserByUsername(username.trim());
-        if (existingUser) {
-          toast({
-            title: "Registration failed",
-            description: "Username already exists. Please choose another.",
-            variant: "destructive",
-          });
-        } else {
-          // For demo purposes, we'll create a temporary user and login
-          onLogin(username.trim(), `user_${Date.now()}`);
-        }
+      // Register flow
+      if (!username.trim() || !displayName.trim() || !email.trim() || !password.trim()) {
+        toast({
+          title: "Registration failed",
+          description: "Please fill all fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { user, error } = await registerUser(email.trim(), password, username.trim(), displayName.trim());
+      if (user) {
+        toast({
+          title: "Account created!",
+          description: "Welcome to ChatApp!",
+        });
+        onLogin(user);
+      } else {
+        toast({
+          title: "Registration failed",
+          description: error || "Failed to create account.",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -85,22 +95,6 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
                 : "Create an account to start chatting"
               }
             </CardDescription>
-            {isLogin && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-2">Test usernames:</p>
-                <div className="flex flex-wrap gap-1">
-                  {["alice_j", "bob_smith", "carol_d", "david_w", "emma_brown", "john_doe"].map(username => (
-                    <span 
-                      key={username} 
-                      className="text-xs px-2 py-1 bg-primary/20 text-primary rounded cursor-pointer hover:bg-primary/30"
-                      onClick={() => setUsername(username)}
-                    >
-                      {username}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,26 +113,27 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder={isLogin ? "Enter your username" : "Choose a username"}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="h-12 text-base"
                 />
               </div>
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="your.email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required={!isLogin}
                     className="h-12 text-base"
                   />
                 </div>

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Users } from "lucide-react";
-import { getFriendRequests, respondToFriendRequest, getCurrentUser } from "@/data/mockData";
+import { getFriendRequests, respondToFriendRequest } from "@/services/firebase";
+import { getCurrentUser } from "@/data/mockData";
 import { FriendRequest } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,8 +18,9 @@ export const FriendRequests = () => {
 
   const loadFriendRequests = () => {
     if (currentUser) {
-      const requests = getFriendRequests(currentUser.id);
-      setFriendRequests(requests);
+      getFriendRequests(currentUser.id, (requests) => {
+        setFriendRequests(requests);
+      });
     }
   };
 
@@ -28,7 +30,7 @@ export const FriendRequests = () => {
 
   const handleRequest = async (requestId: string, accept: boolean) => {
     setLoading(true);
-    const success = respondToFriendRequest(requestId, accept);
+    const success = await respondToFriendRequest(requestId, accept);
     
     if (success) {
       toast({

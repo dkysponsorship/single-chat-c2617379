@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Search, UserPlus, Check } from "lucide-react";
-import { searchUsers, sendFriendRequest, getCurrentUser } from "@/data/mockData";
+import { searchUsers, sendFriendRequest } from "@/services/firebase";
+import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,20 +18,20 @@ export const UserSearch = () => {
 
   const currentUser = getCurrentUser();
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.trim() && currentUser) {
-      const results = searchUsers(query.trim(), currentUser.id);
+      const results = await searchUsers(query.trim(), currentUser.id);
       setSearchResults(results);
     } else {
       setSearchResults([]);
     }
   };
 
-  const handleSendRequest = (userId: string) => {
+  const handleSendRequest = async (userId: string) => {
     if (!currentUser) return;
     
-    const success = sendFriendRequest(currentUser.id, userId);
+    const success = await sendFriendRequest(currentUser.id, userId);
     if (success) {
       setSentRequests(prev => new Set([...prev, userId]));
       toast({

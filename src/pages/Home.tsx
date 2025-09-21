@@ -6,7 +6,8 @@ import { Friend } from "@/components/FriendList";
 import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
 import { UserProfile } from "@/components/UserProfile";
-import { getCurrentUser, getFriends } from "@/data/mockData";
+import { getFriends } from "@/services/firebase";
+import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
 
 const Home = () => {
@@ -20,20 +21,23 @@ const Home = () => {
       navigate("/");
     } else {
       setCurrentUser(user);
-      // Load friends from mock data
-      const userFriends = getFriends(user.id);
-      const friendsData: Friend[] = userFriends.map(friend => ({
-        id: friend.id,
-        name: friend.displayName,
-        avatar: friend.avatar,
-        isOnline: friend.isOnline,
-        lastMessage: "Start a conversation!",
-        unreadCount: 0
-      }));
-      setFriends(friendsData);
+      // Load friends from Firebase
+      getFriends(user.id, (userFriends) => {
+        const friendsData: Friend[] = userFriends.map(friend => ({
+          id: friend.id,
+          name: friend.displayName,
+          avatar: friend.avatar,
+          isOnline: friend.isOnline,
+          lastMessage: "Start a conversation!",
+          unreadCount: 0
+        }));
+        setFriends(friendsData);
+      });
     }
   }, [navigate]);
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const { logoutUser } = await import("@/services/firebase");
+    await logoutUser();
     sessionStorage.removeItem("currentUser");
     navigate("/");
   };
