@@ -59,8 +59,19 @@ export const getCurrentUser = (): User | null => {
   const userStr = sessionStorage.getItem("currentUser");
   if (!userStr) return null;
   
-  const savedUser = JSON.parse(userStr);
-  return mockUsers.find(u => u.username === savedUser.username || u.id === savedUser.id) || null;
+  try {
+    // Try to parse as JSON (new format)
+    const savedUser = JSON.parse(userStr);
+    if (savedUser && typeof savedUser === 'object' && savedUser.username) {
+      return mockUsers.find(u => u.username === savedUser.username || u.id === savedUser.id) || null;
+    } else {
+      // Handle old format (plain string username)
+      return mockUsers.find(u => u.username === userStr) || null;
+    }
+  } catch (error) {
+    // If JSON.parse fails, treat it as old format (plain string username)
+    return mockUsers.find(u => u.username === userStr) || null;
+  }
 };
 
 export const getUserByUsername = (username: string): User | null => {
