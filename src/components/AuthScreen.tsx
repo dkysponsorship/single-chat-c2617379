@@ -23,16 +23,25 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
     e.preventDefault();
     
     if (isLogin) {
-      // Login flow
+      // Login flow - more flexible for testing
       const user = getUserByUsername(username.trim());
       if (user) {
         onLogin(user.username, user.id);
       } else {
-        toast({
-          title: "Login failed",
-          description: "User not found. Please check your username.",
-          variant: "destructive",
-        });
+        // For testing mode, allow any username to login as a demo user
+        if (username.trim()) {
+          toast({
+            title: "Demo Login",
+            description: `Logging in as demo user: ${username.trim()}`,
+          });
+          onLogin(username.trim(), `demo_${Date.now()}`);
+        } else {
+          toast({
+            title: "Login failed",
+            description: "Please enter a username or select from test users above.",
+            variant: "destructive",
+          });
+        }
       }
     } else {
       // Register flow - for demo, we'll just simulate registration
@@ -76,6 +85,22 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
                 : "Create an account to start chatting"
               }
             </CardDescription>
+            {isLogin && (
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-2">Test usernames:</p>
+                <div className="flex flex-wrap gap-1">
+                  {["alice_j", "bob_smith", "carol_d", "david_w", "emma_brown", "john_doe"].map(username => (
+                    <span 
+                      key={username} 
+                      className="text-xs px-2 py-1 bg-primary/20 text-primary rounded cursor-pointer hover:bg-primary/30"
+                      onClick={() => setUsername(username)}
+                    >
+                      {username}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
