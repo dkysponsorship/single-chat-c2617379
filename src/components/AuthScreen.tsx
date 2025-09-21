@@ -2,21 +2,53 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { MessageCircle } from "lucide-react";
+import { getUserByUsername } from "@/data/mockData";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthScreenProps {
-  onLogin: (username: string) => void;
+  onLogin: (username: string, userId: string) => void;
 }
 
 export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      onLogin(username);
+    
+    if (isLogin) {
+      // Login flow
+      const user = getUserByUsername(username.trim());
+      if (user) {
+        onLogin(user.username, user.id);
+      } else {
+        toast({
+          title: "Login failed",
+          description: "User not found. Please check your username.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Register flow - for demo, we'll just simulate registration
+      if (username.trim() && displayName.trim()) {
+        const existingUser = getUserByUsername(username.trim());
+        if (existingUser) {
+          toast({
+            title: "Registration failed",
+            description: "Username already exists. Please choose another.",
+            variant: "destructive",
+          });
+        } else {
+          // For demo purposes, we'll create a temporary user and login
+          onLogin(username.trim(), `user_${Date.now()}`);
+        }
+      }
     }
   };
 
@@ -47,18 +79,49 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="Your full name"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required={!isLogin}
+                    className="h-12 text-base"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
                 <Input
+                  id="username"
                   type="text"
-                  placeholder="Username"
+                  placeholder={isLogin ? "Enter your username" : "Choose a username"}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   className="h-12 text-base"
                 />
               </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 text-base"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
                 <Input
+                  id="password"
                   type="password"
                   placeholder="Password"
                   value={password}

@@ -6,10 +6,10 @@ const Index = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (username: string) => {
+  const handleLogin = (username: string, userId: string) => {
     setCurrentUser(username);
     // Store user in sessionStorage so other pages can access it
-    sessionStorage.setItem("currentUser", username);
+    sessionStorage.setItem("currentUser", JSON.stringify({ username, id: userId }));
     navigate("/home");
   };
 

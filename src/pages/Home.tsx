@@ -3,51 +3,34 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, MessageCircle } from "lucide-react";
 import { Friend } from "@/components/FriendList";
+import { UserSearch } from "@/components/UserSearch";
+import { FriendRequests } from "@/components/FriendRequests";
+import { UserProfile } from "@/components/UserProfile";
+import { getCurrentUser, getFriends } from "@/data/mockData";
+import { User } from "@/types/user";
 
-// Mock data for friends - same as before
-const initialFriends: Friend[] = [{
-  id: "1",
-  name: "Alice Johnson",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice",
-  isOnline: true,
-  lastMessage: "Hey! How are you doing?",
-  unreadCount: 2
-}, {
-  id: "2",
-  name: "Bob Smith",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bob",
-  isOnline: true,
-  lastMessage: "Let's meet tomorrow!",
-  unreadCount: 1
-}, {
-  id: "3",
-  name: "Carol Davis",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carol",
-  isOnline: false,
-  lastMessage: "Thanks for the help 😊"
-}, {
-  id: "4",
-  name: "David Wilson",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=David",
-  isOnline: true,
-  lastMessage: "Great job on the project!"
-}, {
-  id: "5",
-  name: "Emma Brown",
-  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
-  isOnline: false,
-  lastMessage: "See you later!"
-}];
 const Home = () => {
-  const [currentUser, setCurrentUser] = useState<string>("");
-  const [friends] = useState<Friend[]>(initialFriends);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const navigate = useNavigate();
+  
   useEffect(() => {
-    const user = sessionStorage.getItem("currentUser");
+    const user = getCurrentUser();
     if (!user) {
       navigate("/");
     } else {
       setCurrentUser(user);
+      // Load friends from mock data
+      const userFriends = getFriends(user.id);
+      const friendsData: Friend[] = userFriends.map(friend => ({
+        id: friend.id,
+        name: friend.displayName,
+        avatar: friend.avatar,
+        isOnline: friend.isOnline,
+        lastMessage: "Start a conversation!",
+        unreadCount: 0
+      }));
+      setFriends(friendsData);
     }
   }, [navigate]);
   const handleLogout = () => {
@@ -74,8 +57,10 @@ const Home = () => {
         
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground hidden sm:block">
-            Welcome, {currentUser}
+            Welcome, {currentUser?.displayName}
           </span>
+          <UserSearch />
+          <UserProfile />
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>
@@ -86,14 +71,27 @@ const Home = () => {
       <div className="max-w-4xl mx-auto p-4">
         {/* Welcome Section */}
         <div className="text-center py-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome back, {currentUser}!</h2>
+          <h2 className="text-3xl font-bold mb-2">Welcome back, {currentUser?.displayName}!</h2>
           <p className="text-muted-foreground mb-8">
             Choose a friend to start chatting
           </p>
         </div>
 
-        {/* Friends Grid - Better for home page */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Friend Requests Section */}
+        <div className="mb-8">
+          <FriendRequests />
+        </div>
+
+        {/* Friends Grid */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Your Friends</h3>
+          {friends.length === 0 ? (
+            <div className="text-center py-8 border border-border rounded-lg">
+              <p className="text-muted-foreground mb-4">No friends yet!</p>
+              <p className="text-sm text-muted-foreground">Search for users above to send friend requests</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
@@ -120,10 +118,11 @@ const Home = () => {
               {friend.lastMessage && <p className="text-sm text-muted-foreground line-clamp-2">
                   {friend.lastMessage}
                 </p>}
-            </div>)}
+              </div>
+            )}
+            </div>
+          )}
         </div>
-
-        {/* Stats Section */}
         
       </div>
     </div>;

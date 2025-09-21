@@ -1,0 +1,146 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { User, Settings } from "lucide-react";
+import { getCurrentUser } from "@/data/mockData";
+import { User as UserType } from "@/types/user";
+import { useToast } from "@/hooks/use-toast";
+
+export const UserProfile = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [formData, setFormData] = useState({
+    displayName: "",
+    username: "",
+    email: "",
+    bio: ""
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      setFormData({
+        displayName: user.displayName,
+        username: user.username,
+        email: user.email || "",
+        bio: user.bio || ""
+      });
+    }
+  }, [isOpen]);
+
+  const handleSave = () => {
+    // In a real app, this would update the user in the database
+    // For now, we'll just update sessionStorage
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        ...formData
+      };
+      sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+    }
+    
+    toast({
+      title: "Profile updated!",
+      description: "Your profile has been updated successfully.",
+    });
+    setIsOpen(false);
+  };
+
+  if (!currentUser) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <Settings className="w-4 h-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Profile Settings
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {/* Avatar Section */}
+          <div className="flex items-center gap-4">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={currentUser.avatar} />
+              <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                {currentUser.displayName.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{currentUser.displayName}</p>
+              <p className="text-sm text-muted-foreground">@{currentUser.username}</p>
+              <p className="text-xs text-muted-foreground">ID: {currentUser.id}</p>
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                value={formData.displayName}
+                onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                placeholder="Your display name"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="Your username"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="your.email@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Tell us about yourself..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-4">
+            <Button onClick={handleSave} className="flex-1">
+              Save Changes
+            </Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
