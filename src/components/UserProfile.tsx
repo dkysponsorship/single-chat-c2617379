@@ -44,6 +44,9 @@ export const UserProfile = () => {
       };
       sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
+      
+      // Trigger a page refresh to update all components with new user data
+      window.location.reload();
     }
     
     toast({
