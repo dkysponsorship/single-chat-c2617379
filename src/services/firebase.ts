@@ -349,3 +349,34 @@ export const deleteChat = async (chatId: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Profile management functions
+export const updateUserProfile = async (userId: string, profileData: Partial<User>): Promise<boolean> => {
+  try {
+    const userRef = ref(database, `users/${userId}`);
+    // Get current user data and merge with new data
+    const currentSnapshot = await get(userRef);
+    const currentData = currentSnapshot.exists() ? currentSnapshot.val() : {};
+    const updatedData = { ...currentData, ...profileData };
+    
+    await set(userRef, updatedData);
+    return true;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return false;
+  }
+};
+
+export const getUserProfile = async (userId: string): Promise<User | null> => {
+  try {
+    const userRef = ref(database, `users/${userId}`);
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      return snapshot.val();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return null;
+  }
+};

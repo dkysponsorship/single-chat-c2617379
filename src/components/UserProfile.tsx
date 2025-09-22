@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { User, Settings } from "lucide-react";
-import { getCurrentUser } from "@/data/mockData";
+import { getCurrentUser, updateUserProfile } from "@/services/firebase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,37 +22,55 @@ export const UserProfile = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (user) {
-      setCurrentUser(user);
-      setFormData({
-        displayName: user.displayName || "",
-        username: user.username || "",
-        email: user.email || "",
-        bio: user.bio || ""
-      });
+    const fetchUser = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        setFormData({
+          displayName: user.displayName || "",
+          username: user.username || "",
+          email: user.email || "",
+          bio: user.bio || ""
+        });
+      }
+    };
+    
+    if (isOpen) {
+      fetchUser();
     }
   }, [isOpen]);
 
-  const handleSave = () => {
-    // In a real app, this would update the user in the database
-    // For now, we'll just update sessionStorage
+  const handleSave = async () => {
     if (currentUser) {
       const updatedUser = {
         ...currentUser,
         ...formData
       };
-      sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
-      setCurrentUser(updatedUser);
       
-      // Trigger a page refresh to update all components with new user data
-      window.location.reload();
+      // Update profile in Firebase
+      const success = await updateUserProfile(currentUser.id, updatedUser);
+      
+      if (success) {
+        // Update sessionStorage for immediate UI update
+        sessionStorage.setItem("currentUser", JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser);
+        
+        toast({
+          title: "Profile updated!",
+          description: "Your profile has been updated successfully.",
+        });
+        
+        // Trigger a page refresh to update all components with new user data
+        window.location.reload();
+      } else {
+        toast({
+          title: "Update failed",
+          description: "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
     
-    toast({
-      title: "Profile updated!",
-      description: "Your profile has been updated successfully.",
-    });
     setIsOpen(false);
   };
 

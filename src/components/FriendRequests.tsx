@@ -4,17 +4,34 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Users } from "lucide-react";
-import { getFriendRequests, respondToFriendRequest } from "@/services/firebase";
-import { getCurrentUser } from "@/data/mockData";
+import { getFriendRequests, respondToFriendRequest, getCurrentUser } from "@/services/firebase";
 import { FriendRequest } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
 export const FriendRequests = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
-  const currentUser = getCurrentUser();
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    };
+    
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      const unsubscribe = getFriendRequests(currentUser.id, (requests) => {
+        setFriendRequests(requests);
+      });
+      
+      return unsubscribe;
+    }
+  }, [currentUser]);
 
   const loadFriendRequests = () => {
     if (currentUser) {
@@ -23,10 +40,6 @@ export const FriendRequests = () => {
       });
     }
   };
-
-  useEffect(() => {
-    loadFriendRequests();
-  }, [currentUser]);
 
   const handleRequest = async (requestId: string, accept: boolean) => {
     setLoading(true);
