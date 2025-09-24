@@ -46,22 +46,13 @@ export const registerUser = async (
   displayName: string
 ): Promise<{ user: User; error?: string }> => {
   try {
-    // Check if username already exists
-    const usernameQuery = query(
-      ref(database, 'users'), 
-      orderByChild('username'), 
-      equalTo(username)
-    );
-    const usernameSnapshot = await get(usernameQuery);
-    
-    if (usernameSnapshot.exists()) {
-      return { user: null as any, error: "Username already exists" };
-    }
-
-    // Create user with email and password
+    // Create user with email and password first
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Create user profile in database
+    // Wait a moment for auth to be fully established
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Create user profile in database after authentication is complete
     const userData: User = {
       id: credential.user.uid,
       username,
@@ -72,10 +63,12 @@ export const registerUser = async (
       createdAt: serverTimestamp() as any
     };
 
+    // Now write to database with authenticated user
     await set(ref(database, `users/${credential.user.uid}`), userData);
     
     return { user: userData };
   } catch (error: any) {
+    console.error("Registration error:", error);
     return { user: null as any, error: error.message };
   }
 };
