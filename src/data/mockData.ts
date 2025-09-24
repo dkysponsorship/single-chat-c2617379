@@ -93,7 +93,7 @@ export const getFriendRequests = (userId: string): FriendRequest[] => {
   
   const allRequests: FriendRequest[] = JSON.parse(requests);
   return allRequests.filter(req => 
-    (req.toUserId === userId || req.fromUserId === userId) && 
+    (req.to_user_id === userId || req.from_user_id === userId) && 
     req.status === 'pending'
   );
 };
@@ -104,8 +104,8 @@ export const sendFriendRequest = (fromUserId: string, toUserId: string): boolean
   
   // Check if request already exists
   const existingRequest = requests.find(req => 
-    (req.fromUserId === fromUserId && req.toUserId === toUserId) ||
-    (req.fromUserId === toUserId && req.toUserId === fromUserId)
+    (req.from_user_id === fromUserId && req.to_user_id === toUserId) ||
+    (req.from_user_id === toUserId && req.to_user_id === fromUserId)
   );
   
   if (existingRequest) return false;
@@ -117,12 +117,10 @@ export const sendFriendRequest = (fromUserId: string, toUserId: string): boolean
   
   const newRequest: FriendRequest = {
     id: `req_${Date.now()}`,
-    fromUserId,
-    toUserId,
-    fromUser,
-    toUser,
+    from_user_id: fromUserId,
+    to_user_id: toUserId,
     status: 'pending',
-    createdAt: new Date()
+    created_at: new Date().toISOString()
   };
   
   requests.push(newRequest);
@@ -150,8 +148,8 @@ export const respondToFriendRequest = (requestId: string, accept: boolean): bool
     
     friendships.push({
       id: `friendship_${Date.now()}`,
-      user1Id: request.fromUserId,
-      user2Id: request.toUserId,
+      user1Id: request.from_user_id,
+      user2Id: request.to_user_id,
       createdAt: new Date()
     });
     

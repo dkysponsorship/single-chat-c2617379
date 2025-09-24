@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Users } from "lucide-react";
-import { getFriendRequests, respondToFriendRequest, getCurrentUser } from "@/services/firebase";
+import { getFriendRequests, respondToFriendRequest, getCurrentUser } from "@/services/supabase";
 import { FriendRequest } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,13 +24,17 @@ export const FriendRequests = () => {
   }, []);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+    
     if (currentUser) {
-      const unsubscribe = getFriendRequests(currentUser.id, (requests) => {
+      unsubscribe = getFriendRequests(currentUser.id, (requests) => {
         setFriendRequests(requests);
       });
-      
-      return unsubscribe;
     }
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [currentUser]);
 
   const loadFriendRequests = () => {
@@ -62,11 +66,11 @@ export const FriendRequests = () => {
   };
 
   const receivedRequests = friendRequests.filter(req => 
-    req.toUserId === currentUser?.id && req.status === 'pending'
+    req.to_user_id === currentUser?.id && req.status === 'pending'
   );
   
   const sentRequests = friendRequests.filter(req => 
-    req.fromUserId === currentUser?.id && req.status === 'pending'
+    req.from_user_id === currentUser?.id && req.status === 'pending'
   );
 
   if (receivedRequests.length === 0 && sentRequests.length === 0) {
@@ -112,14 +116,14 @@ export const FriendRequests = () => {
                 <div key={request.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={request.fromUser.avatar} />
+                      <AvatarImage src={request.from_profile?.avatar_url} />
                       <AvatarFallback className="bg-primary/20 text-primary">
-                        {request.fromUser.displayName.slice(0, 2).toUpperCase()}
+                        {request.from_profile?.display_name?.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{request.fromUser.displayName}</p>
-                      <p className="text-sm text-muted-foreground">@{request.fromUser.username}</p>
+                      <p className="font-medium">{request.from_profile?.display_name}</p>
+                      <p className="text-sm text-muted-foreground">@{request.from_profile?.username}</p>
                     </div>
                   </div>
                   
@@ -160,14 +164,14 @@ export const FriendRequests = () => {
                 <div key={request.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src={request.toUser.avatar} />
+                      <AvatarImage src={request.to_profile?.avatar_url} />
                       <AvatarFallback className="bg-primary/20 text-primary">
-                        {request.toUser.displayName.slice(0, 2).toUpperCase()}
+                        {request.to_profile?.display_name?.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{request.toUser.displayName}</p>
-                      <p className="text-sm text-muted-foreground">@{request.toUser.username}</p>
+                      <p className="font-medium">{request.to_profile?.display_name}</p>
+                      <p className="text-sm text-muted-foreground">@{request.to_profile?.username}</p>
                     </div>
                   </div>
                   

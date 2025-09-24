@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { MessageCircle } from "lucide-react";
-import { registerUser, loginUser } from "@/services/firebase";
+import { registerUser, loginUser } from "@/services/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthScreenProps {

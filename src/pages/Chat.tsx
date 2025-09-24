@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
-import { sendMessage, getMessages, createChatId, deleteMessage, deleteChat, logoutUser } from "@/services/firebase";
+import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +27,7 @@ const Chat = () => {
     setCurrentUser(user);
     
     if (friendId) {
-      // In a real app, you'd fetch friend data from Firebase
+      // In a real app, you'd fetch friend data from Supabase
       // For now, we'll create a mock friend based on friendId
       const mockFriend: User = {
         id: friendId,
@@ -35,7 +35,7 @@ const Chat = () => {
         displayName: `Friend ${friendId.slice(0, 8)}`,
         email: `friend${friendId}@example.com`,
         isOnline: Math.random() > 0.5,
-        bio: "Firebase user"
+        bio: "Supabase user"
       };
       setFriend(mockFriend);
       
@@ -45,7 +45,9 @@ const Chat = () => {
         setMessages(newMessages);
       });
       
-      return unsubscribe;
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [friendId, navigate]);
 
@@ -65,15 +67,12 @@ const Chat = () => {
   };
 
   const handleDeleteMessage = async (messageId: string, deleteForEveryone?: boolean) => {
-    if (!currentUser || !friendId) return;
-    
-    const chatId = createChatId(currentUser.id, friendId);
-    const success = await deleteMessage(chatId, messageId);
+    const success = await deleteMessage(messageId);
     
     if (success) {
       toast({
         title: "Message deleted",
-        description: deleteForEveryone ? "Message deleted for everyone." : "Message deleted for you.",
+        description: "Message deleted successfully.",
       });
     } else {
       toast({
@@ -85,24 +84,11 @@ const Chat = () => {
   };
 
   const handleDeleteChat = async () => {
-    if (!currentUser || !friendId) return;
-    
-    const chatId = createChatId(currentUser.id, friendId);
-    const success = await deleteChat(chatId);
-    
-    if (success) {
-      toast({
-        title: "Chat deleted",
-        description: "The entire chat has been deleted.",
-      });
-      navigate("/home");
-    } else {
-      toast({
-        title: "Failed to delete chat",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Feature not available",
+      description: "Chat deletion is not available at the moment.",
+      variant: "destructive",
+    });
   };
 
   const handleBack = () => {
@@ -135,7 +121,7 @@ const Chat = () => {
     );
   }
 
-  // Convert Firebase messages to ChatWindow format
+  // Convert Supabase messages to ChatWindow format
   const formattedMessages: Message[] = messages.map(msg => ({
     id: msg.id,
     text: msg.message,

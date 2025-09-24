@@ -12,13 +12,26 @@ export interface User {
 
 export interface FriendRequest {
   id: string;
-  fromUserId: string;
-  toUserId: string;
-  fromUser: User;
-  toUser: User;
+  from_user_id: string;
+  to_user_id: string;
+  from_profile?: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+    bio?: string;
+  };
+  to_profile?: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+    bio?: string;
+  };
   status: 'pending' | 'accepted' | 'declined';
-  createdAt: Date;
-}
+  created_at: string;
+  updated_at?: string;
+};
 
 export interface Friendship {
   id: string;

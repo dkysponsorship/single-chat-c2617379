@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { User, Settings } from "lucide-react";
-import { getCurrentUser, updateUserProfile } from "@/services/firebase";
+import { getCurrentUser, updateUserProfile } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,7 +47,7 @@ export const UserProfile = () => {
         ...formData
       };
       
-      // Update profile in Firebase
+      // Update profile in Supabase
       const success = await updateUserProfile(currentUser.id, updatedUser);
       
       if (success) {

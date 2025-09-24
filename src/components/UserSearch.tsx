@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Search, UserPlus, Check } from "lucide-react";
-import { searchUsers, sendFriendRequest } from "@/services/firebase";
+import { searchUsers, sendFriendRequest } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";

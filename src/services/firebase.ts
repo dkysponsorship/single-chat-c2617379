@@ -158,12 +158,10 @@ export const sendFriendRequest = async (fromUserId: string, toUserId: string): P
     
     const requestData: FriendRequest = {
       id: '', // Will be set by push
-      fromUserId,
-      toUserId,
-      fromUser: fromUserSnapshot.val(),
-      toUser: toUserSnapshot.val(),
+      from_user_id: fromUserId,
+      to_user_id: toUserId,
       status: 'pending',
-      createdAt: serverTimestamp() as any
+      created_at: serverTimestamp() as any
     };
 
     const newRequestRef = push(ref(database, 'friendRequests'));

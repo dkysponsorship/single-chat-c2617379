@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthScreen } from "@/components/AuthScreen";
-import { getUserProfile } from "@/services/firebase";
+import { getCurrentUser } from "@/services/supabase";
 
 const Index = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
@@ -10,8 +10,8 @@ const Index = () => {
   const handleLogin = async (user: any) => {
     setCurrentUser(user.username || user.displayName);
     
-    // Fetch latest profile data from Firebase
-    const latestProfile = await getUserProfile(user.id);
+    // Fetch latest profile data from Supabase
+    const latestProfile = await getCurrentUser();
     const profileToStore = latestProfile || user;
     
     // Store user in sessionStorage so other pages can access it

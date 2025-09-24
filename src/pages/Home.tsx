@@ -6,7 +6,7 @@ import { Friend } from "@/components/FriendList";
 import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
 import { UserProfile } from "@/components/UserProfile";
-import { getFriends } from "@/services/firebase";
+import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
 
@@ -21,7 +21,7 @@ const Home = () => {
       navigate("/");
     } else {
       setCurrentUser(user);
-      // Load friends from Firebase
+      // Load friends from Supabase
       getFriends(user.id, (userFriends) => {
         const friendsData: Friend[] = userFriends.map(friend => ({
           id: friend.id,
@@ -36,7 +36,7 @@ const Home = () => {
     }
   }, [navigate]);
   const handleLogout = async () => {
-    const { logoutUser } = await import("@/services/firebase");
+    const { logoutUser } = await import("@/services/supabase");
     await logoutUser();
     sessionStorage.removeItem("currentUser");
     navigate("/");
