@@ -79,8 +79,9 @@ export const UserProfile = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="gap-2">
           <Settings className="w-4 h-4" />
+          <span className="hidden sm:inline">Profile</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

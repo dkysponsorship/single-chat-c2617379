@@ -65,7 +65,7 @@ const Home = () => {
           </span>
           <UserSearch />
           <UserProfile />
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10">
             <LogOut className="w-4 h-4" />
           </Button>
         </div>
