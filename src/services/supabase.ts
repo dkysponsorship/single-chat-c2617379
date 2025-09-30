@@ -205,8 +205,8 @@ export const getFriendRequests = (userId: string, callback: (requests: any[]) =>
       .from('friend_requests')
       .select(`
         *,
-        from_profile:profiles!friend_requests_from_user_id_fkey(*),
-        to_profile:profiles!friend_requests_to_user_id_fkey(*)
+        from_profile:from_user_id(id, username, display_name, avatar_url, is_online),
+        to_profile:to_user_id(id, username, display_name, avatar_url, is_online)
       `)
       .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
       .eq('status', 'pending');
@@ -272,8 +272,8 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
       .from('friendships')
       .select(`
         *,
-        user1_profile:profiles!friendships_user1_id_fkey(*),
-        user2_profile:profiles!friendships_user2_id_fkey(*)
+        user1_profile:user1_id(id, username, display_name, avatar_url, is_online, bio, created_at),
+        user2_profile:user2_id(id, username, display_name, avatar_url, is_online, bio, created_at)
       `)
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
