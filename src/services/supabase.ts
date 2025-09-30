@@ -201,16 +201,20 @@ export const sendFriendRequest = async (fromUserId: string, toUserId: string): P
 export const getFriendRequests = (userId: string, callback: (requests: any[]) => void) => {
   // Initial fetch
   const fetchRequests = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('friend_requests')
       .select(`
         *,
-        from_profile:profiles!from_user_id(*),
-        to_profile:profiles!to_user_id(*)
+        from_profile:profiles!friend_requests_from_user_id_fkey(*),
+        to_profile:profiles!friend_requests_to_user_id_fkey(*)
       `)
       .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
       .eq('status', 'pending');
 
+    if (error) {
+      console.error("Error fetching friend requests:", error);
+      return;
+    }
     if (data) callback(data);
   };
 
@@ -264,14 +268,19 @@ export const respondToFriendRequest = async (requestId: string, accept: boolean)
 
 export const getFriends = (userId: string, callback: (friends: User[]) => void) => {
   const fetchFriends = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('friendships')
       .select(`
         *,
-        user1_profile:profiles!user1_id(*),
-        user2_profile:profiles!user2_id(*)
+        user1_profile:profiles!friendships_user1_id_fkey(*),
+        user2_profile:profiles!friendships_user2_id_fkey(*)
       `)
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+
+    if (error) {
+      console.error("Error fetching friends:", error);
+      return;
+    }
 
     if (data) {
       const friends = data.map(friendship => {
