@@ -74,8 +74,6 @@ export const UserProfile = () => {
     setIsOpen(false);
   };
 
-  if (!currentUser) return null;
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -91,21 +89,24 @@ export const UserProfile = () => {
             Profile Settings
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          {/* Avatar Section */}
-          <div className="flex items-center gap-4">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src={currentUser.avatar} />
-              <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{currentUser.displayName || 'Unknown User'}</p>
-              <p className="text-sm text-muted-foreground">@{currentUser.username || 'unknown'}</p>
-              <p className="text-xs text-muted-foreground">ID: {currentUser.id}</p>
+        {!currentUser ? (
+          <div className="py-8 text-center text-muted-foreground">Loading...</div>
+        ) : (
+          <div className="space-y-4">
+            {/* Avatar Section */}
+            <div className="flex items-center gap-4">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={currentUser.avatar} />
+                <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                  {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{currentUser.displayName || 'Unknown User'}</p>
+                <p className="text-sm text-muted-foreground">@{currentUser.username || 'unknown'}</p>
+                <p className="text-xs text-muted-foreground">ID: {currentUser.id}</p>
+              </div>
             </div>
-          </div>
 
           {/* Form Fields */}
           <div className="space-y-3">
@@ -152,16 +153,17 @@ export const UserProfile = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
-            <Button onClick={handleSave} className="flex-1">
-              Save Changes
-            </Button>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4">
+              <Button onClick={handleSave} className="flex-1">
+                Save Changes
+              </Button>
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
