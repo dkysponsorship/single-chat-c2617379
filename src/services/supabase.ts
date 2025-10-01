@@ -205,8 +205,8 @@ export const getFriendRequests = (userId: string, callback: (requests: any[]) =>
       .from('friend_requests')
       .select(`
         *,
-        from_profile:from_user_id(id, username, display_name, avatar_url, is_online),
-        to_profile:to_user_id(id, username, display_name, avatar_url, is_online)
+        from_profile:profiles!friend_requests_from_user_id_fkey(id, username, display_name, avatar_url, is_online),
+        to_profile:profiles!friend_requests_to_user_id_fkey(id, username, display_name, avatar_url, is_online)
       `)
       .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
       .eq('status', 'pending');
@@ -272,8 +272,8 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
       .from('friendships')
       .select(`
         *,
-        user1_profile:user1_id(id, username, display_name, avatar_url, is_online, bio, created_at),
-        user2_profile:user2_id(id, username, display_name, avatar_url, is_online, bio, created_at)
+        user1_profile:profiles!friendships_user1_id_fkey(id, username, display_name, avatar_url, is_online, bio, created_at),
+        user2_profile:profiles!friendships_user2_id_fkey(id, username, display_name, avatar_url, is_online, bio, created_at)
       `)
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
@@ -339,7 +339,7 @@ export const getMessages = (chatId: string, callback: (messages: any[]) => void)
       .from('messages')
       .select(`
         *,
-        sender_profile:profiles!sender_id(username, display_name, avatar_url)
+        sender_profile:profiles!messages_sender_id_fkey(username, display_name, avatar_url)
       `)
       .eq('chat_id', chatId)
       .order('created_at', { ascending: true });
