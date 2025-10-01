@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
-import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser } from "@/services/supabase";
+import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,17 +27,14 @@ const Chat = () => {
     setCurrentUser(user);
     
     if (friendId) {
-      // In a real app, you'd fetch friend data from Supabase
-      // For now, we'll create a mock friend based on friendId
-      const mockFriend: User = {
-        id: friendId,
-        username: `user_${friendId}`,
-        displayName: `Friend ${friendId.slice(0, 8)}`,
-        email: `friend${friendId}@example.com`,
-        isOnline: Math.random() > 0.5,
-        bio: "Supabase user"
+      // Fetch friend profile from Supabase
+      const fetchFriend = async () => {
+        const friendProfile = await getUserProfile(friendId);
+        if (friendProfile) {
+          setFriend(friendProfile);
+        }
       };
-      setFriend(mockFriend);
+      fetchFriend();
       
       // Setup real-time message listening
       const chatId = createChatId(user.id, friendId);
@@ -124,10 +121,10 @@ const Chat = () => {
   // Convert Supabase messages to ChatWindow format
   const formattedMessages: Message[] = messages.map(msg => ({
     id: msg.id,
-    text: msg.message,
-    sender: msg.senderId === currentUser.id ? currentUser.displayName : friend.displayName,
-    timestamp: new Date(msg.timestamp || Date.now()),
-    isOwn: msg.senderId === currentUser.id
+    text: msg.content,
+    sender: msg.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
+    timestamp: new Date(msg.created_at || Date.now()),
+    isOwn: msg.sender_id === currentUser.id
   }));
 
   return (

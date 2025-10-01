@@ -153,6 +153,33 @@ export const updateUserProfile = async (userId: string, profileData: Partial<Use
   }
 };
 
+// Get user profile by ID
+export const getUserProfile = async (userId: string): Promise<User | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      username: data.username,
+      displayName: data.display_name,
+      email: '', // Email not exposed in profiles
+      isOnline: data.is_online || false,
+      bio: data.bio || '',
+      avatar: data.avatar_url,
+      createdAt: data.created_at
+    };
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
+};
+
 // Search users
 export const searchUsers = async (query: string, currentUserId: string): Promise<User[]> => {
   try {
