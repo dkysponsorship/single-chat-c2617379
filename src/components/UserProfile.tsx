@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { User, Settings } from "lucide-react";
-import { getCurrentUser, updateUserProfile } from "@/services/supabase";
+import { User, Settings, Camera, Upload } from "lucide-react";
+import { getCurrentUser, updateUserProfile, uploadAvatar } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,6 +19,10 @@ export const UserProfile = () => {
     email: "",
     bio: ""
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,23 +36,80 @@ export const UserProfile = () => {
           email: user.email || "",
           bio: user.bio || ""
         });
+        setPreviewUrl(user.avatar || null);
       }
     };
     
     if (isOpen) {
       fetchUser();
+    } else {
+      setSelectedFile(null);
+      setPreviewUrl(null);
     }
   }, [isOpen]);
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image under 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
     if (currentUser) {
+      setIsUploading(true);
+      
+      let avatarUrl = currentUser.avatar;
+      
+      // Upload avatar if a new file is selected
+      if (selectedFile) {
+        const uploadedUrl = await uploadAvatar(currentUser.id, selectedFile);
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        } else {
+          toast({
+            title: "Upload failed",
+            description: "Failed to upload avatar. Please try again.",
+            variant: "destructive",
+          });
+          setIsUploading(false);
+          return;
+        }
+      }
+      
       const updatedUser = {
         ...currentUser,
-        ...formData
+        ...formData,
+        avatar: avatarUrl
       };
       
       // Update profile in Supabase
       const success = await updateUserProfile(currentUser.id, updatedUser);
+      
+      setIsUploading(false);
       
       if (success) {
         // Update sessionStorage for immediate UI update
@@ -95,16 +156,43 @@ export const UserProfile = () => {
           <div className="space-y-4">
             {/* Avatar Section */}
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={currentUser.avatar} />
-                <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                  {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
+              <div className="relative">
+                <Avatar className="w-20 h-20">
+                  <AvatarImage src={previewUrl || currentUser.avatar} />
+                  <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                    {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+              <div className="flex-1">
                 <p className="font-medium">{currentUser.displayName || 'Unknown User'}</p>
                 <p className="text-sm text-muted-foreground">@{currentUser.username || 'unknown'}</p>
-                <p className="text-xs text-muted-foreground">ID: {currentUser.id}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-7 text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-3 w-3 mr-1" />
+                  Change Photo
+                </Button>
               </div>
             </div>
 
@@ -155,10 +243,10 @@ export const UserProfile = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button onClick={handleSave} className="flex-1">
-                Save Changes
+              <Button onClick={handleSave} className="flex-1" disabled={isUploading}>
+                {isUploading ? "Uploading..." : "Save Changes"}
               </Button>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
+              <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
                 Cancel
               </Button>
             </div>
