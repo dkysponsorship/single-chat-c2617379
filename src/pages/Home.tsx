@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAIFriendSetup } from "./AIFriendSetup";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, MessageCircle } from "lucide-react";
@@ -10,6 +11,7 @@ import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
 const Home = () => {
+  useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const navigate = useNavigate();

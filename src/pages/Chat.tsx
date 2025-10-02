@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
-import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile } from "@/services/supabase";
+import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile, sendAIMessage, AI_FRIEND_ID } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +27,21 @@ const Chat = () => {
     setCurrentUser(user);
     
     if (friendId) {
+      // Check if this is AI chat
+      if (friendId === AI_FRIEND_ID) {
+        setFriend({
+          id: AI_FRIEND_ID,
+          username: 'ai_assistant',
+          displayName: 'AI Assistant',
+          email: '',
+          isOnline: true,
+          bio: 'I am your friendly AI assistant, always here to chat! 🤖',
+          avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AIAssistant',
+          createdAt: new Date().toISOString()
+        });
+        return; // Don't subscribe to messages for AI
+      }
+      
       // Fetch friend profile from Supabase
       const fetchFriend = async () => {
         const friendProfile = await getUserProfile(friendId);
@@ -51,6 +66,51 @@ const Chat = () => {
   const handleSendMessage = async (messageText: string) => {
     if (!currentUser || !friendId || !messageText.trim()) return;
     
+    // Handle AI chat differently
+    if (friendId === AI_FRIEND_ID) {
+      // Add user message to UI immediately
+      const userMessage = {
+        id: Date.now().toString(),
+        content: messageText.trim(),
+        sender_id: currentUser.id,
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Show typing indicator
+      setIsTyping(true);
+      
+      // Build conversation history
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender_id === currentUser.id ? 'user' : 'assistant',
+        content: msg.content
+      }));
+      conversationHistory.push({ role: 'user', content: messageText.trim() });
+      
+      // Get AI response
+      const aiResponse = await sendAIMessage(currentUser.id, messageText.trim(), conversationHistory);
+      setIsTyping(false);
+      
+      if (aiResponse) {
+        // Add AI message to UI
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          content: aiResponse,
+          sender_id: AI_FRIEND_ID,
+          created_at: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        toast({
+          title: "AI Error",
+          description: "Failed to get AI response. Please try again.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    // Regular chat
     const chatId = createChatId(currentUser.id, friendId);
     const success = await sendMessage(chatId, currentUser.id, messageText.trim());
     

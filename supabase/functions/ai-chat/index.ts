@@ -63,18 +63,6 @@ serve(async (req) => {
       throw new Error("No response from AI");
     }
 
-    // Save AI response to database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const aiUserId = "ai-assistant-001";
-    await supabase.from("messages").insert({
-      chat_id: chatId,
-      sender_id: aiUserId,
-      content: aiMessage,
-    });
-
     return new Response(
       JSON.stringify({ message: aiMessage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

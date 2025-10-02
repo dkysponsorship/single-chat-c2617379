@@ -319,6 +319,18 @@ export const respondToFriendRequest = async (requestId: string, accept: boolean)
 
 export const getFriends = (userId: string, callback: (friends: User[]) => void) => {
   const fetchFriends = async () => {
+    // Add AI friend manually
+    const aiFriend: User = {
+      id: 'ai-assistant',
+      username: 'ai_assistant',
+      displayName: 'AI Assistant',
+      email: '',
+      isOnline: true,
+      bio: 'I am your friendly AI assistant, always here to chat! 🤖',
+      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AIAssistant',
+      createdAt: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
       .from('friendships')
       .select(`
@@ -349,7 +361,8 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
           createdAt: friendProfile.created_at
         };
       });
-      callback(friends);
+      // Add AI friend at the beginning
+      callback([aiFriend, ...friends]);
     }
   };
 
@@ -426,5 +439,30 @@ export const deleteMessage = async (messageId: string): Promise<boolean> => {
   } catch (error) {
     console.error("Error deleting message:", error);
     return false;
+  }
+};
+
+// AI Chat - Special constant for AI friend
+export const AI_FRIEND_ID = 'ai-assistant';
+
+export const sendAIMessage = async (userId: string, message: string, conversationHistory: Array<{role: string, content: string}>): Promise<string | null> => {
+  try {
+    const chatId = createChatId(userId, AI_FRIEND_ID);
+    
+    // Call AI edge function
+    const { data, error } = await supabase.functions.invoke('ai-chat', {
+      body: { 
+        messages: conversationHistory,
+        chatId,
+        userId
+      }
+    });
+
+    if (error) throw error;
+    
+    return data?.message || null;
+  } catch (error) {
+    console.error("Error sending AI message:", error);
+    return null;
   }
 };
