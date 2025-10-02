@@ -9,12 +9,10 @@ import { UserProfile } from "@/components/UserProfile";
 import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
-
 const Home = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const navigate = useNavigate();
-  
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
@@ -22,7 +20,7 @@ const Home = () => {
     } else {
       setCurrentUser(user);
       // Load friends from Supabase
-      getFriends(user.id, (userFriends) => {
+      getFriends(user.id, userFriends => {
         const friendsData: Friend[] = userFriends.map(friend => ({
           id: friend.id,
           name: friend.displayName,
@@ -36,7 +34,9 @@ const Home = () => {
     }
   }, [navigate]);
   const handleLogout = async () => {
-    const { logoutUser } = await import("@/services/supabase");
+    const {
+      logoutUser
+    } = await import("@/services/supabase");
     await logoutUser();
     sessionStorage.removeItem("currentUser");
     navigate("/");
@@ -60,9 +60,7 @@ const Home = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground hidden sm:block">
-            Welcome, {currentUser?.displayName}
-          </span>
+          
           <UserSearch />
           <UserProfile />
           <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10">
@@ -89,13 +87,10 @@ const Home = () => {
         {/* Friends Grid */}
         <div className="mb-8">
           <h3 className="text-xl font-semibold mb-4">Your Friends</h3>
-          {friends.length === 0 ? (
-            <div className="text-center py-8 border border-border rounded-lg">
+          {friends.length === 0 ? <div className="text-center py-8 border border-border rounded-lg">
               <p className="text-muted-foreground mb-4">No friends yet!</p>
               <p className="text-sm text-muted-foreground">Search for users above to send friend requests</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
@@ -122,10 +117,8 @@ const Home = () => {
               {friend.lastMessage && <p className="text-sm text-muted-foreground line-clamp-2">
                   {friend.lastMessage}
                 </p>}
-              </div>
-            )}
-            </div>
-          )}
+              </div>)}
+            </div>}
         </div>
         
       </div>
