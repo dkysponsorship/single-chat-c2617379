@@ -379,6 +379,9 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
   return () => subscription.unsubscribe();
 };
 
+// AI Assistant ID
+export const AI_ASSISTANT_ID = 'ai-assistant';
+
 // Messages
 export const sendMessage = async (chatId: string, senderId: string, message: string): Promise<boolean> => {
   try {
@@ -393,6 +396,29 @@ export const sendMessage = async (chatId: string, senderId: string, message: str
     return !error;
   } catch (error) {
     console.error("Error sending message:", error);
+    return false;
+  }
+};
+
+// Send message to AI and get response
+export const sendMessageToAI = async (chatId: string, userId: string, message: string, conversationHistory: any[]): Promise<boolean> => {
+  try {
+    // Save user message first
+    await sendMessage(chatId, userId, message);
+
+    // Call AI edge function
+    const { data, error } = await supabase.functions.invoke('ai-chat', {
+      body: { 
+        messages: conversationHistory,
+        chatId,
+        userId
+      }
+    });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Error sending message to AI:", error);
     return false;
   }
 };
