@@ -74,11 +74,9 @@ const Home = () => {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 pb-20">
         {/* Welcome Section */}
-        <div className="text-center py-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome back, {currentUser?.displayName}!</h2>
-          <p className="text-muted-foreground mb-8">
-            Choose a friend to start chatting
-          </p>
+        <div className="text-center py-0">
+          
+          <p className="mb-8 text-2xl font-bold text-[#da50e9] text-left">MESSAGES</p>
         </div>
 
         {/* Friend Requests Section */}
