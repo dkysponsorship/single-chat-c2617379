@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAIFriendSetup } from "./AIFriendSetup";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle } from "lucide-react";
+import { LogOut, MessageCircle, Home as HomeIcon, User as UserIcon } from "lucide-react";
 import { Friend } from "@/components/FriendList";
 import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
@@ -72,7 +72,7 @@ const Home = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-4xl mx-auto p-4 pb-20">
         {/* Welcome Section */}
         <div className="text-center py-8">
           <h2 className="text-3xl font-bold mb-2">Welcome back, {currentUser?.displayName}!</h2>
@@ -122,7 +122,22 @@ const Home = () => {
               </div>)}
             </div>}
         </div>
-        
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/feed")}>
+          <HomeIcon className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => navigate("/home")}>
+          <MessageCircle className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/profile/${currentUser.id}`)}>
+          <UserIcon className="w-5 h-5" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={handleLogout}>
+          <LogOut className="w-5 h-5" />
+        </Button>
       </div>
     </div>;
 };

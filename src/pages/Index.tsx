@@ -16,7 +16,7 @@ const Index = () => {
     
     // Store user in sessionStorage so other pages can access it
     sessionStorage.setItem("currentUser", JSON.stringify(profileToStore));
-    navigate("/home");
+    navigate("/feed");
   };
 
   const handleLogout = () => {
