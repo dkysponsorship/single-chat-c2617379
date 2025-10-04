@@ -91,7 +91,7 @@ const Home = () => {
               <p className="text-muted-foreground mb-4">No friends yet!</p>
               <p className="text-sm text-muted-foreground">Search for users above to send friend requests</p>
             </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg">
+          {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg px-[18px] py-0">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
