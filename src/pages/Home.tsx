@@ -133,9 +133,7 @@ const Home = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate(`/profile/${currentUser.id}`)}>
           <UserIcon className="w-5 h-5" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleLogout}>
-          <LogOut className="w-5 h-5" />
-        </Button>
+        
       </div>
     </div>;
 };
