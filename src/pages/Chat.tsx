@@ -39,7 +39,15 @@ const Chat = () => {
           avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AIAssistant',
           createdAt: new Date().toISOString()
         });
-        return; // Don't subscribe to messages for AI
+        // Load AI chat messages
+        const chatId = createChatId(user.id, AI_FRIEND_ID);
+        const unsubscribe = getMessages(chatId, (newMessages) => {
+          setMessages(newMessages);
+        });
+        
+        return () => {
+          if (unsubscribe) unsubscribe();
+        };
       }
       
       // Fetch friend profile from Supabase
@@ -148,6 +156,15 @@ const Chat = () => {
     });
   };
 
+  const handleSendVoice = async (audioBlob: Blob) => {
+    toast({
+      title: "Voice Note Sent",
+      description: "Your voice note has been recorded (demo mode).",
+    });
+    // In a real implementation, you would upload the audio to storage
+    // and send a message with the audio URL
+  };
+
   const handleBack = () => {
     navigate("/home");
   };
@@ -227,6 +244,7 @@ const Chat = () => {
           onDeleteChat={handleDeleteChat}
           onDeleteMessage={handleDeleteMessage}
           isTyping={isTyping}
+          onSendVoice={handleSendVoice}
         />
       </div>
     </div>

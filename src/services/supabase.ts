@@ -342,34 +342,49 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
 
     if (error) {
       console.error("Error fetching friends:", error);
+      callback([aiFriend]); // Return at least AI friend on error
       return;
     }
 
     if (data) {
-      const friends = data.map(friendship => {
-        const friendProfile = friendship.user1_id === userId ? 
-          friendship.user2_profile : friendship.user1_profile;
-        
-        return {
-          id: friendProfile.id,
-          username: friendProfile.username,
-          displayName: friendProfile.display_name,
-          email: '',
-          isOnline: friendProfile.is_online || false,
-          bio: friendProfile.bio || '',
-          avatar: friendProfile.avatar_url,
-          createdAt: friendProfile.created_at
-        };
-      });
+      // Use a Set to track unique friend IDs
+      const uniqueFriendIds = new Set<string>();
+      const friends = data
+        .map(friendship => {
+          const friendProfile = friendship.user1_id === userId ? 
+            friendship.user2_profile : friendship.user1_profile;
+          
+          return {
+            id: friendProfile.id,
+            username: friendProfile.username,
+            displayName: friendProfile.display_name,
+            email: '',
+            isOnline: friendProfile.is_online || false,
+            bio: friendProfile.bio || '',
+            avatar: friendProfile.avatar_url,
+            createdAt: friendProfile.created_at
+          };
+        })
+        .filter(friend => {
+          // Filter out duplicates
+          if (uniqueFriendIds.has(friend.id)) {
+            return false;
+          }
+          uniqueFriendIds.add(friend.id);
+          return true;
+        });
+      
       // Add AI friend at the beginning
       callback([aiFriend, ...friends]);
+    } else {
+      callback([aiFriend]);
     }
   };
 
   fetchFriends();
 
   const subscription = supabase
-    .channel('friendships')
+    .channel(`friendships-${userId}`)
     .on('postgres_changes',
       { event: '*', schema: 'public', table: 'friendships' },
       () => fetchFriends()

@@ -8,6 +8,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { Send, MoreVertical, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
+import { VoiceRecorder } from "./VoiceRecorder";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Message {
   id: string;
@@ -25,6 +27,7 @@ interface ChatWindowProps {
   onDeleteChat: () => void;
   onDeleteMessage: (messageId: string, deleteForEveryone?: boolean) => void;
   isTyping: boolean;
+  onSendVoice?: (audioBlob: Blob) => void;
 }
 
 export const ChatWindow = ({ 
@@ -34,10 +37,12 @@ export const ChatWindow = ({
   onSendMessage,
   onDeleteChat,
   onDeleteMessage,
-  isTyping 
+  isTyping,
+  onSendVoice
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,6 +66,18 @@ export const ChatWindow = ({
       minute: '2-digit', 
       hour12: true 
     });
+  };
+
+  const handleSendVoice = (audioBlob: Blob) => {
+    if (onSendVoice) {
+      onSendVoice(audioBlob);
+    } else {
+      toast({
+        title: "Voice notes not supported",
+        description: "Voice notes are not available for this chat.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -196,6 +213,7 @@ export const ChatWindow = ({
             placeholder={`Message ${friend.name}...`}
             className="flex-1 h-10 bg-background border-border focus:ring-primary"
           />
+          <VoiceRecorder onSendVoice={handleSendVoice} />
           <Button 
             type="submit" 
             size="sm" 
