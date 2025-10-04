@@ -21,8 +21,8 @@ const Home = () => {
       navigate("/");
     } else {
       setCurrentUser(user);
-      // Load friends from Supabase with real-time updates
-      const unsubscribe = getFriends(user.id, userFriends => {
+      // Load friends from Supabase
+      getFriends(user.id, userFriends => {
         const friendsData: Friend[] = userFriends.map(friend => ({
           id: friend.id,
           name: friend.displayName,
@@ -33,10 +33,6 @@ const Home = () => {
         }));
         setFriends(friendsData);
       });
-
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
     }
   }, [navigate]);
   const handleLogout = async () => {
@@ -98,19 +94,11 @@ const Home = () => {
           {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
-                  {friend.avatar ? (
-                    <img 
-                      src={friend.avatar} 
-                      alt={friend.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                      <span className="text-lg font-bold text-primary">
-                        {friend.name.slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                    <span className="text-lg font-bold text-primary px-0 py-px">
+                      {friend.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${friend.isOnline ? "bg-status-online online-pulse" : "bg-status-offline"}`} />
                 </div>
                 
