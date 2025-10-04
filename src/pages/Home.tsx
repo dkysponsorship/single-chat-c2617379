@@ -114,9 +114,7 @@ const Home = () => {
                   </div>}
               </div>
               
-              {friend.lastMessage && <p className="text-sm text-muted-foreground line-clamp-2">
-                  {friend.lastMessage}
-                </p>}
+              {friend.lastMessage}
               </div>)}
             </div>}
         </div>
