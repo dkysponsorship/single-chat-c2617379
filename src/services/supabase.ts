@@ -1,6 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 
+// Re-export supabase for use in other files
+export { supabase };
+
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
