@@ -9,6 +9,7 @@ import { User, Settings, Camera, Upload } from "lucide-react";
 import { getCurrentUser, updateUserProfile, uploadAvatar } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
+import { ImageCropper } from "@/components/ImageCropper";
 
 export const UserProfile = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,6 +23,8 @@ export const UserProfile = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -45,6 +48,8 @@ export const UserProfile = () => {
     } else {
       setSelectedFile(null);
       setPreviewUrl(null);
+      setCroppedBlob(null);
+      setIsCropperOpen(false);
     }
   }, [isOpen]);
 
@@ -73,9 +78,17 @@ export const UserProfile = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
+        setIsCropperOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (blob: Blob) => {
+    setCroppedBlob(blob);
+    const url = URL.createObjectURL(blob);
+    setPreviewUrl(url);
+    setIsCropperOpen(false);
   };
 
   const handleSave = async () => {
@@ -84,9 +97,10 @@ export const UserProfile = () => {
       
       let avatarUrl = currentUser.avatar;
       
-      // Upload avatar if a new file is selected
-      if (selectedFile) {
-        const uploadedUrl = await uploadAvatar(currentUser.id, selectedFile);
+      // Upload avatar if a cropped image exists
+      if (croppedBlob) {
+        const file = new File([croppedBlob], selectedFile?.name || "avatar.jpg", { type: "image/jpeg" });
+        const uploadedUrl = await uploadAvatar(currentUser.id, file);
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;
         } else {
@@ -158,7 +172,7 @@ export const UserProfile = () => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="w-20 h-20">
-                  <AvatarImage src={previewUrl || currentUser.avatar} />
+                  <AvatarImage src={previewUrl || currentUser.avatar} className="object-cover" />
                   <AvatarFallback className="bg-primary/20 text-primary text-lg">
                     {currentUser.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : "U"}
                   </AvatarFallback>
@@ -195,6 +209,13 @@ export const UserProfile = () => {
                 </Button>
               </div>
             </div>
+
+            <ImageCropper
+              imageSrc={previewUrl || ""}
+              isOpen={isCropperOpen}
+              onCropComplete={handleCropComplete}
+              onCancel={() => setIsCropperOpen(false)}
+            />
 
           {/* Form Fields */}
           <div className="space-y-3">

@@ -17,6 +17,7 @@ export interface Message {
   sender: string;
   timestamp: Date;
   isOwn: boolean;
+  audioUrl?: string;
 }
 
 interface ChatWindowProps {
@@ -150,7 +151,17 @@ export const ChatWindow = ({
                       ? "message-sent text-white" 
                       : "bg-chat-received text-chat-received-foreground"
                   )}>
-                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    {message.audioUrl ? (
+                      <div className="flex flex-col gap-2">
+                        <audio controls className="w-full max-w-xs">
+                          <source src={message.audioUrl} type="audio/webm" />
+                          Your browser does not support the audio element.
+                        </audio>
+                        <p className="text-xs opacity-70">{message.text}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed">{message.text}</p>
+                    )}
                     <p className={cn(
                       "text-xs mt-1 opacity-70",
                       message.isOwn ? "text-white/70" : "text-muted-foreground"

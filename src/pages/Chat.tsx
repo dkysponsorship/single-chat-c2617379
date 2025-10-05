@@ -5,6 +5,7 @@ import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
 import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile, sendAIMessage, AI_FRIEND_ID } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -157,12 +158,50 @@ const Chat = () => {
   };
 
   const handleSendVoice = async (audioBlob: Blob) => {
-    toast({
-      title: "Voice Note Sent",
-      description: "Your voice note has been recorded (demo mode).",
-    });
-    // In a real implementation, you would upload the audio to storage
-    // and send a message with the audio URL
+    if (!currentUser || !friendId) return;
+    
+    try {
+      // Upload audio to storage
+      const fileName = `${currentUser.id}/${Date.now()}.webm`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('voice-notes')
+        .upload(fileName, audioBlob, {
+          contentType: 'audio/webm',
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('voice-notes')
+        .getPublicUrl(fileName);
+
+      // Send message with audio URL
+      const chatId = createChatId(currentUser.id, friendId);
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content: '🎤 Voice message',
+          audio_url: publicUrl,
+        });
+
+      if (messageError) throw messageError;
+
+      toast({
+        title: "Voice note sent",
+        description: "Your voice message has been sent successfully.",
+      });
+    } catch (error) {
+      console.error('Error sending voice note:', error);
+      toast({
+        title: "Failed to send voice note",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBack = () => {
@@ -201,7 +240,8 @@ const Chat = () => {
     text: msg.content,
     sender: msg.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
     timestamp: new Date(msg.created_at || Date.now()),
-    isOwn: msg.sender_id === currentUser.id
+    isOwn: msg.sender_id === currentUser.id,
+    audioUrl: msg.audio_url
   }));
 
   return (

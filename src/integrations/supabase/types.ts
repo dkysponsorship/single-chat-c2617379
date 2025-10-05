@@ -179,6 +179,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          audio_url: string | null
           chat_id: string
           content: string
           created_at: string | null
@@ -186,6 +187,7 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          audio_url?: string | null
           chat_id: string
           content: string
           created_at?: string | null
@@ -193,6 +195,7 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          audio_url?: string | null
           chat_id?: string
           content?: string
           created_at?: string | null
