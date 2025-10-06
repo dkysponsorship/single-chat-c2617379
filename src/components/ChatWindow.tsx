@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { Send, MoreVertical, Trash2 } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -18,6 +18,7 @@ export interface Message {
   timestamp: Date;
   isOwn: boolean;
   audioUrl?: string;
+  isEdited?: boolean;
 }
 
 interface ChatWindowProps {
@@ -27,6 +28,7 @@ interface ChatWindowProps {
   onSendMessage: (message: string) => void;
   onDeleteChat: () => void;
   onDeleteMessage: (messageId: string, deleteForEveryone?: boolean) => void;
+  onEditMessage: (messageId: string, newContent: string) => void;
   isTyping: boolean;
   onSendVoice?: (audioBlob: Blob) => void;
 }
@@ -38,10 +40,13 @@ export const ChatWindow = ({
   onSendMessage,
   onDeleteChat,
   onDeleteMessage,
+  onEditMessage,
   isTyping,
   onSendVoice
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -78,6 +83,23 @@ export const ChatWindow = ({
         description: "Voice notes are not available for this chat.",
         variant: "destructive",
       });
+    }
+  };
+
+  const startEditingMessage = (message: Message) => {
+    setEditingMessageId(message.id);
+    setEditContent(message.text);
+  };
+
+  const cancelEditing = () => {
+    setEditingMessageId(null);
+    setEditContent("");
+  };
+
+  const saveEdit = () => {
+    if (editingMessageId && editContent.trim()) {
+      onEditMessage(editingMessageId, editContent.trim());
+      cancelEditing();
     }
   };
 
@@ -151,26 +173,61 @@ export const ChatWindow = ({
                       ? "message-sent text-white" 
                       : "bg-chat-received text-chat-received-foreground"
                   )}>
-                    {message.audioUrl ? (
+                    {editingMessageId === message.id ? (
                       <div className="flex flex-col gap-2">
-                        <audio controls className="w-full max-w-xs">
-                          <source src={message.audioUrl} type="audio/webm" />
-                          Your browser does not support the audio element.
-                        </audio>
-                        <p className="text-xs opacity-70">{message.text}</p>
+                        <Input
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="bg-white/10 border-white/20 text-white"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={saveEdit} className="h-7 text-white hover:bg-white/20">
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEditing} className="h-7 text-white hover:bg-white/20">
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-sm leading-relaxed">{message.text}</p>
+                      <>
+                        {message.audioUrl ? (
+                          <div className="flex flex-col gap-2">
+                            <audio controls className="w-full max-w-xs">
+                              <source src={message.audioUrl} type="audio/webm" />
+                              Your browser does not support the audio element.
+                            </audio>
+                            <p className="text-xs opacity-70">{message.text}</p>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm leading-relaxed">{message.text}</p>
+                            {message.isEdited && (
+                              <span className={cn(
+                                "text-xs opacity-50 italic",
+                                message.isOwn ? "text-white/50" : "text-muted-foreground"
+                              )}> (edited)</span>
+                            )}
+                          </>
+                        )}
+                        <p className={cn(
+                          "text-xs mt-1 opacity-70",
+                          message.isOwn ? "text-white/70" : "text-muted-foreground"
+                        )}>
+                          {formatTime(message.timestamp)}
+                        </p>
+                      </>
                     )}
-                    <p className={cn(
-                      "text-xs mt-1 opacity-70",
-                      message.isOwn ? "text-white/70" : "text-muted-foreground"
-                    )}>
-                      {formatTime(message.timestamp)}
-                    </p>
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
+                  {message.isOwn && !message.audioUrl && (
+                    <ContextMenuItem onClick={() => startEditingMessage(message)}>
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit message
+                    </ContextMenuItem>
+                  )}
                   <ContextMenuItem 
                     onClick={() => onDeleteMessage(message.id, false)}
                     className="text-destructive"

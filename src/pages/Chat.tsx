@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
-import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile, sendAIMessage, AI_FRIEND_ID } from "@/services/supabase";
+import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile, sendAIMessage, AI_FRIEND_ID, editMessage, deleteChat } from "@/services/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
@@ -132,13 +132,15 @@ const Chat = () => {
     }
   };
 
-  const handleDeleteMessage = async (messageId: string, deleteForEveryone?: boolean) => {
-    const success = await deleteMessage(messageId);
+  const handleDeleteMessage = async (messageId: string, deleteForEveryone: boolean = false) => {
+    if (!currentUser) return;
+    
+    const success = await deleteMessage(messageId, currentUser.id, deleteForEveryone);
     
     if (success) {
       toast({
         title: "Message deleted",
-        description: "Message deleted successfully.",
+        description: deleteForEveryone ? "Message deleted for everyone." : "Message deleted for you.",
       });
     } else {
       toast({
@@ -149,12 +151,42 @@ const Chat = () => {
     }
   };
 
+  const handleEditMessage = async (messageId: string, newContent: string) => {
+    const success = await editMessage(messageId, newContent);
+    
+    if (success) {
+      toast({
+        title: "Message edited",
+        description: "Your message has been updated.",
+      });
+    } else {
+      toast({
+        title: "Failed to edit message",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteChat = async () => {
-    toast({
-      title: "Feature not available",
-      description: "Chat deletion is not available at the moment.",
-      variant: "destructive",
-    });
+    if (!currentUser || !friendId) return;
+    
+    const chatId = createChatId(currentUser.id, friendId);
+    const success = await deleteChat(chatId);
+    
+    if (success) {
+      toast({
+        title: "Chat deleted",
+        description: "All messages have been deleted.",
+      });
+      navigate("/home");
+    } else {
+      toast({
+        title: "Failed to delete chat",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendVoice = async (audioBlob: Blob) => {
@@ -241,7 +273,8 @@ const Chat = () => {
     sender: msg.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
     timestamp: new Date(msg.created_at || Date.now()),
     isOwn: msg.sender_id === currentUser.id,
-    audioUrl: msg.audio_url
+    audioUrl: msg.audio_url,
+    isEdited: msg.is_edited
   }));
 
   return (
@@ -283,6 +316,7 @@ const Chat = () => {
           onSendMessage={handleSendMessage}
           onDeleteChat={handleDeleteChat}
           onDeleteMessage={handleDeleteMessage}
+          onEditMessage={handleEditMessage}
           isTyping={isTyping}
           onSendVoice={handleSendVoice}
         />

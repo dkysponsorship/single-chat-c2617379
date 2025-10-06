@@ -472,16 +472,75 @@ export const createChatId = (userId1: string, userId2: string): string => {
   return [userId1, userId2].sort().join('_');
 };
 
-export const deleteMessage = async (messageId: string): Promise<boolean> => {
+export const deleteMessage = async (messageId: string, userId: string, deleteForEveryone: boolean = false): Promise<boolean> => {
+  try {
+    if (deleteForEveryone) {
+      // Delete message completely (only sender can do this)
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      return !error;
+    } else {
+      // Add user to deleted_for array (delete for me only)
+      const { data: message, error: fetchError } = await supabase
+        .from('messages')
+        .select('deleted_for')
+        .eq('id', messageId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching message:', fetchError);
+        return false;
+      }
+
+      const deletedFor = message?.deleted_for || [];
+      if (!deletedFor.includes(userId)) {
+        deletedFor.push(userId);
+      }
+
+      const { error: updateError } = await supabase
+        .from('messages')
+        .update({ deleted_for: deletedFor })
+        .eq('id', messageId);
+
+      return !updateError;
+    }
+  } catch (error) {
+    console.error("Error deleting message:", error);
+    return false;
+  }
+};
+
+export const editMessage = async (messageId: string, newContent: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('messages')
-      .delete()
+      .update({ 
+        content: newContent,
+        edited_at: new Date().toISOString(),
+        is_edited: true
+      })
       .eq('id', messageId);
 
     return !error;
   } catch (error) {
-    console.error("Error deleting message:", error);
+    console.error('Error editing message:', error);
+    return false;
+  }
+};
+
+export const deleteChat = async (chatId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('chat_id', chatId);
+
+    return !error;
+  } catch (error) {
+    console.error('Error deleting chat:', error);
     return false;
   }
 };

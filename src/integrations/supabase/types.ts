@@ -183,7 +183,10 @@ export type Database = {
           chat_id: string
           content: string
           created_at: string | null
+          deleted_for: string[] | null
+          edited_at: string | null
           id: string
+          is_edited: boolean | null
           sender_id: string
         }
         Insert: {
@@ -191,7 +194,10 @@ export type Database = {
           chat_id: string
           content: string
           created_at?: string | null
+          deleted_for?: string[] | null
+          edited_at?: string | null
           id?: string
+          is_edited?: boolean | null
           sender_id: string
         }
         Update: {
@@ -199,7 +205,10 @@ export type Database = {
           chat_id?: string
           content?: string
           created_at?: string | null
+          deleted_for?: string[] | null
+          edited_at?: string | null
           id?: string
+          is_edited?: boolean | null
           sender_id?: string
         }
         Relationships: [
