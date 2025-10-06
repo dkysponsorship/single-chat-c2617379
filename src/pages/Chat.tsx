@@ -4,7 +4,18 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
 import { getCurrentUser } from "@/data/mockData";
-import { sendMessage, getMessages, createChatId, deleteMessage, logoutUser, getUserProfile, sendAIMessage, AI_FRIEND_ID, editMessage, deleteChat } from "@/services/supabase";
+import { 
+  sendMessage, 
+  getMessages, 
+  createChatId, 
+  deleteMessage, 
+  logoutUser, 
+  getUserProfile, 
+  sendAIMessage, 
+  AI_FRIEND_ID, 
+  editMessage, 
+  deleteChat 
+} from "@/services/supabase";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
