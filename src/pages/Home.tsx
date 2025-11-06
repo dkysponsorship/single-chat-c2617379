@@ -55,11 +55,11 @@ const Home = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow">
-        <div className="flex items-center gap-3 bg-sky-700">
+        <div className="flex items-center gap-3 rounded-sm bg-zinc-950">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full message-sent">
             <MessageCircle className="w-4 h-4 text-white" />
           </div>
-          <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-cyan-600">​Messages</h1>
+          <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-slate-50">​Messages</h1>
         </div>
         
         <div className="flex items-center gap-2">
