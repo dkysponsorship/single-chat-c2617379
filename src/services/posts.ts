@@ -1,5 +1,27 @@
 import { supabase } from "@/integrations/supabase/client";
-import { uploadAvatar } from "./supabase";
+
+// Upload post image to posts bucket
+const uploadPostImage = async (userId: string, file: File): Promise<string | null> => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('posts')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('posts')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading post image:', error);
+    return null;
+  }
+};
 
 export interface Post {
   id: string;
@@ -38,7 +60,7 @@ export const createPost = async (userId: string, caption: string, imageFile?: Fi
 
     // Upload image if provided
     if (imageFile) {
-      imageUrl = await uploadAvatar(userId, imageFile);
+      imageUrl = await uploadPostImage(userId, imageFile);
     }
 
     const { data, error } = await supabase
