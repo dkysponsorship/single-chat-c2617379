@@ -33,7 +33,6 @@ const Home = () => {
         }));
         setFriends(friendsData);
       });
-
       return () => {
         if (unsubscribe) unsubscribe();
       };
@@ -60,9 +59,7 @@ const Home = () => {
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full message-sent">
             <MessageCircle className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-            ChatApp
-          </h1>
+          <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-cyan-600">​Messages</h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -98,19 +95,11 @@ const Home = () => {
           {friends.map(friend => <div key={friend.id} onClick={() => handleSelectFriend(friend.id)} className="bg-card border border-border rounded-lg p-4 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg px-[18px] py-0">
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
-                  {friend.avatar ? (
-                    <img 
-                      src={friend.avatar} 
-                      alt={friend.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                  {friend.avatar ? <img src={friend.avatar} alt={friend.name} className="w-12 h-12 rounded-full object-cover" /> : <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                       <span className="text-lg font-bold text-primary px-0 py-px">
                         {friend.name.slice(0, 2).toUpperCase()}
                       </span>
-                    </div>
-                  )}
+                    </div>}
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${friend.isOnline ? "bg-status-online online-pulse" : "bg-status-offline"}`} />
                 </div>
                 
