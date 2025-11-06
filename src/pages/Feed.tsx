@@ -28,10 +28,7 @@ const Feed = () => {
         return;
       }
       setCurrentUser(user);
-      await Promise.all([
-        loadPosts(user.id),
-        loadStories(user.id)
-      ]);
+      await Promise.all([loadPosts(user.id), loadStories(user.id)]);
     };
     initPage();
   }, [navigate]);
@@ -41,17 +38,14 @@ const Feed = () => {
     setPosts(feedPosts);
     setIsLoading(false);
   };
-
   const loadStories = async (userId: string) => {
     const stories = await getAllStories(userId);
     setAllStories(stories);
   };
-
   const handleStoryClick = async (userStories: UserStories) => {
     setViewerStories(userStories.stories);
     setShowStoryViewer(true);
   };
-
   const handleCurrentUserStoryClick = async () => {
     if (!currentUser) return;
     const myStories = await getUserStories(currentUser.id);
@@ -72,7 +66,7 @@ const Feed = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+        <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-left text-sky-400">
           Feed
         </h1>
         
@@ -83,32 +77,16 @@ const Feed = () => {
       </div>
 
       {/* Stories Section */}
-      {allStories.length > 0 && (
-        <div className="border-b border-border bg-card">
+      {allStories.length > 0 && <div className="border-b border-border bg-card">
           <ScrollArea className="w-full">
             <div className="flex gap-4 p-4 overflow-x-auto">
               {/* Current user's story */}
-              {allStories.find(s => s.user_id === currentUser.id) && (
-                <StoriesRing
-                  userStories={allStories.find(s => s.user_id === currentUser.id)!}
-                  onClick={handleCurrentUserStoryClick}
-                  isCurrentUser
-                />
-              )}
+              {allStories.find(s => s.user_id === currentUser.id) && <StoriesRing userStories={allStories.find(s => s.user_id === currentUser.id)!} onClick={handleCurrentUserStoryClick} isCurrentUser />}
               {/* Other users' stories */}
-              {allStories
-                .filter(s => s.user_id !== currentUser.id)
-                .map(userStories => (
-                  <StoriesRing
-                    key={userStories.user_id}
-                    userStories={userStories}
-                    onClick={() => handleStoryClick(userStories)}
-                  />
-                ))}
+              {allStories.filter(s => s.user_id !== currentUser.id).map(userStories => <StoriesRing key={userStories.user_id} userStories={userStories} onClick={() => handleStoryClick(userStories)} />)}
             </div>
           </ScrollArea>
-        </div>
-      )}
+        </div>}
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto p-4 pb-20">
@@ -123,16 +101,10 @@ const Feed = () => {
       </div>
 
       {/* Story Viewer */}
-      <StoryViewer
-        open={showStoryViewer}
-        onOpenChange={setShowStoryViewer}
-        stories={viewerStories}
-        currentUserId={currentUser.id}
-        onStoryDeleted={() => {
-          loadStories(currentUser.id);
-          setShowStoryViewer(false);
-        }}
-      />
+      <StoryViewer open={showStoryViewer} onOpenChange={setShowStoryViewer} stories={viewerStories} currentUserId={currentUser.id} onStoryDeleted={() => {
+      loadStories(currentUser.id);
+      setShowStoryViewer(false);
+    }} />
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4">
