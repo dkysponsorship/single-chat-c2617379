@@ -55,7 +55,7 @@ const Home = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 bg-sky-700">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full message-sent">
             <MessageCircle className="w-4 h-4 text-white" />
           </div>
