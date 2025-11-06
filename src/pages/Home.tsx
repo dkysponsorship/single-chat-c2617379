@@ -77,7 +77,7 @@ const Home = () => {
         {/* Welcome Section */}
         <div className="text-center py-0">
           
-          <p className="mb-8 text-2xl font-bold text-[#da50e9] text-left">MESSAGES</p>
+          
         </div>
 
         {/* Friend Requests Section */}
