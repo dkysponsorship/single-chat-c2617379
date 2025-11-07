@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createPost } from "@/services/posts";
+import { PostImageCropper } from "@/components/PostImageCropper";
 interface CreatePostDialogProps {
   userId: string;
   onPostCreated?: () => void;
@@ -20,9 +21,9 @@ export const CreatePostDialog = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const [showCropper, setShowCropper] = useState(false);
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
+  const { toast } = useToast();
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -34,13 +35,35 @@ export const CreatePostDialog = ({
         });
         return;
       }
-      setImageFile(file);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setOriginalImageSrc(reader.result as string);
+        setShowCropper(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedBlob], "cropped-image.jpg", { type: "image/jpeg" });
+    setImageFile(croppedFile);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(croppedBlob);
+    
+    setShowCropper(false);
+    setOriginalImageSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setOriginalImageSrc(null);
   };
   const handleSubmit = async () => {
     if (!caption.trim() && !imageFile) {
@@ -113,5 +136,15 @@ export const CreatePostDialog = ({
           </Button>
         </div>
       </DialogContent>
+
+      {/* Image Cropper */}
+      {originalImageSrc && (
+        <PostImageCropper
+          imageSrc={originalImageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          isOpen={showCropper}
+        />
+      )}
     </Dialog>;
 };
