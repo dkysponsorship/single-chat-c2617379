@@ -287,6 +287,21 @@ export const getFollowCounts = async (userId: string): Promise<{ followers: numb
   }
 };
 
+// Update a post
+export const updatePost = async (postId: string, caption: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .update({ caption })
+      .eq('id', postId);
+
+    return !error;
+  } catch (error) {
+    console.error("Error updating post:", error);
+    return false;
+  }
+};
+
 // Delete a post
 export const deletePost = async (postId: string): Promise<boolean> => {
   try {

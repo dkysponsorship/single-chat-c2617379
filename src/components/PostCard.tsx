@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Trash2, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, Trash2, MoreVertical, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditPostDialog } from "./EditPostDialog";
 
 interface PostCardProps {
   post: Post;
@@ -27,6 +28,7 @@ export const PostCard = ({ post, currentUserId, onPostUpdate, onUserClick }: Pos
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const { toast } = useToast();
 
   const handleLike = async () => {
@@ -99,6 +101,10 @@ export const PostCard = ({ post, currentUserId, onPostUpdate, onUserClick }: Pos
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Post
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDeletePost} className="text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Post
@@ -185,6 +191,15 @@ export const PostCard = ({ post, currentUserId, onPostUpdate, onUserClick }: Pos
           </div>
         )}
       </div>
+
+      {/* Edit Post Dialog */}
+      <EditPostDialog
+        postId={post.id}
+        currentCaption={post.caption || ""}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onPostUpdated={onPostUpdate}
+      />
     </div>
   );
 };
