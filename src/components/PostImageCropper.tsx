@@ -14,6 +14,10 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [saturation, setSaturation] = useState(100);
+  const [selectedFilter, setSelectedFilter] = useState<string>("none");
 
   const onCropChange = (crop: any) => {
     setCrop(crop);
@@ -21,6 +25,22 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
 
   const onZoomChange = (zoom: number) => {
     setZoom(zoom);
+  };
+
+  const filters = {
+    none: { brightness: 100, contrast: 100, saturation: 100 },
+    vivid: { brightness: 105, contrast: 120, saturation: 130 },
+    warm: { brightness: 110, contrast: 105, saturation: 115 },
+    cool: { brightness: 95, contrast: 110, saturation: 90 },
+    bw: { brightness: 100, contrast: 120, saturation: 0 },
+  };
+
+  const applyFilter = (filterName: string) => {
+    setSelectedFilter(filterName);
+    const filter = filters[filterName as keyof typeof filters];
+    setBrightness(filter.brightness);
+    setContrast(filter.contrast);
+    setSaturation(filter.saturation);
   };
 
   const onCropCompleteCallback = useCallback((_: any, croppedAreaPixels: any) => {
@@ -59,6 +79,9 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
     // Calculate centering offsets
     const offsetX = (size - pixelCrop.width) / 2;
     const offsetY = (size - pixelCrop.height) / 2;
+
+    // Apply filters
+    ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
 
     // Draw cropped image centered on white background
     ctx.drawImage(
@@ -99,7 +122,12 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
         <DialogHeader>
           <DialogTitle>Crop Post Image</DialogTitle>
         </DialogHeader>
-        <div className="relative w-full h-[400px] bg-muted">
+        <div 
+          className="relative w-full h-[400px] bg-muted"
+          style={{
+            filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
+          }}
+        >
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -112,17 +140,84 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
             onCropComplete={onCropCompleteCallback}
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">Zoom</label>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.1}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full"
-          />
+
+        {/* Filters */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Filters</label>
+          <div className="flex gap-2 flex-wrap">
+            {Object.keys(filters).map((filterName) => (
+              <Button
+                key={filterName}
+                variant={selectedFilter === filterName ? "default" : "outline"}
+                size="sm"
+                onClick={() => applyFilter(filterName)}
+                className="capitalize"
+              >
+                {filterName === "bw" ? "B&W" : filterName}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Adjustments */}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Zoom</label>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Brightness: {brightness}%</label>
+            <input
+              type="range"
+              min={50}
+              max={150}
+              value={brightness}
+              onChange={(e) => {
+                setBrightness(Number(e.target.value));
+                setSelectedFilter("none");
+              }}
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Contrast: {contrast}%</label>
+            <input
+              type="range"
+              min={50}
+              max={150}
+              value={contrast}
+              onChange={(e) => {
+                setContrast(Number(e.target.value));
+                setSelectedFilter("none");
+              }}
+              className="w-full"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Saturation: {saturation}%</label>
+            <input
+              type="range"
+              min={0}
+              max={200}
+              value={saturation}
+              onChange={(e) => {
+                setSaturation(Number(e.target.value));
+                setSelectedFilter("none");
+              }}
+              className="w-full"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel}>
