@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { Send, MoreVertical, Trash2, Edit2, Check, X } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -18,6 +18,7 @@ export interface Message {
   timestamp: Date;
   isOwn: boolean;
   audioUrl?: string;
+  imageUrl?: string;
   isEdited?: boolean;
 }
 
@@ -31,6 +32,7 @@ interface ChatWindowProps {
   onEditMessage: (messageId: string, newContent: string) => void;
   isTyping: boolean;
   onSendVoice?: (audioBlob: Blob) => void;
+  onSendImage?: (imageFile: File) => void;
 }
 
 export const ChatWindow = ({ 
@@ -42,12 +44,14 @@ export const ChatWindow = ({
   onDeleteMessage,
   onEditMessage,
   isTyping,
-  onSendVoice
+  onSendVoice,
+  onSendImage
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -101,6 +105,40 @@ export const ChatWindow = ({
       onEditMessage(editingMessageId, editContent.trim());
       cancelEditing();
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onSendImage) {
+      onSendImage(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const renderMessageText = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a 
+            key={index}
+            href={part} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="underline hover:opacity-80 inline-flex items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link2 className="w-3 h-3" />
+            {part.length > 30 ? part.substring(0, 30) + '...' : part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
   };
 
   return (
@@ -192,7 +230,19 @@ export const ChatWindow = ({
                       </div>
                     ) : (
                       <>
-                        {message.audioUrl ? (
+                        {message.imageUrl ? (
+                          <div className="flex flex-col gap-2">
+                            <img 
+                              src={message.imageUrl} 
+                              alt="Shared image"
+                              className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer"
+                              onClick={() => window.open(message.imageUrl, '_blank')}
+                            />
+                            {message.text !== '📷 Photo' && (
+                              <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
+                            )}
+                          </div>
+                        ) : message.audioUrl ? (
                           <div className="flex flex-col gap-2">
                             <audio controls className="w-full max-w-xs">
                               <source src={message.audioUrl} type="audio/webm" />
@@ -202,7 +252,7 @@ export const ChatWindow = ({
                           </div>
                         ) : (
                           <>
-                            <p className="text-sm leading-relaxed">{message.text}</p>
+                            <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
                             {message.isEdited && (
                               <span className={cn(
                                 "text-xs opacity-50 italic",
@@ -222,7 +272,7 @@ export const ChatWindow = ({
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  {message.isOwn && !message.audioUrl && (
+                  {message.isOwn && !message.audioUrl && !message.imageUrl && (
                     <ContextMenuItem onClick={() => startEditingMessage(message)}>
                       <Edit2 className="w-4 h-4 mr-2" />
                       Edit message
@@ -275,6 +325,24 @@ export const ChatWindow = ({
       {/* Message Input */}
       <div className="p-4 border-t border-border bg-card">
         <form onSubmit={handleSend} className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          {onSendImage && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+              className="h-10"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </Button>
+          )}
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}

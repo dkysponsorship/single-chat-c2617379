@@ -247,6 +247,53 @@ const Chat = () => {
     }
   };
 
+  const handleSendImage = async (imageFile: File) => {
+    if (!currentUser || !friendId) return;
+    
+    try {
+      // Upload image to storage
+      const fileName = `${currentUser.id}/${Date.now()}_${imageFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('posts')
+        .getPublicUrl(fileName);
+
+      // Send message with image URL
+      const chatId = createChatId(currentUser.id, friendId);
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content: '📷 Photo',
+          image_url: publicUrl,
+        });
+
+      if (messageError) throw messageError;
+
+      toast({
+        title: "Photo sent",
+        description: "Your image has been sent successfully.",
+      });
+    } catch (error) {
+      console.error('Error sending image:', error);
+      toast({
+        title: "Failed to send image",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleBack = () => {
     navigate("/home");
   };
@@ -285,6 +332,7 @@ const Chat = () => {
     timestamp: new Date(msg.created_at || Date.now()),
     isOwn: msg.sender_id === currentUser.id,
     audioUrl: msg.audio_url,
+    imageUrl: msg.image_url,
     isEdited: msg.is_edited
   }));
 
@@ -330,6 +378,7 @@ const Chat = () => {
           onEditMessage={handleEditMessage}
           isTyping={isTyping}
           onSendVoice={handleSendVoice}
+          onSendImage={handleSendImage}
         />
       </div>
     </div>

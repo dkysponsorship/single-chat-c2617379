@@ -186,6 +186,7 @@ export type Database = {
           deleted_for: string[] | null
           edited_at: string | null
           id: string
+          image_url: string | null
           is_edited: boolean | null
           sender_id: string
         }
@@ -197,6 +198,7 @@ export type Database = {
           deleted_for?: string[] | null
           edited_at?: string | null
           id?: string
+          image_url?: string | null
           is_edited?: boolean | null
           sender_id: string
         }
@@ -208,6 +210,7 @@ export type Database = {
           deleted_for?: string[] | null
           edited_at?: string | null
           id?: string
+          image_url?: string | null
           is_edited?: boolean | null
           sender_id?: string
         }
