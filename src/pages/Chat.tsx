@@ -83,7 +83,7 @@ const Chat = () => {
     }
   }, [friendId, navigate]);
 
-  const handleSendMessage = async (messageText: string) => {
+  const handleSendMessage = async (messageText: string, replyToId?: string) => {
     if (!currentUser || !friendId || !messageText.trim()) return;
     
     // Handle AI chat differently
@@ -132,9 +132,21 @@ const Chat = () => {
     
     // Regular chat
     const chatId = createChatId(currentUser.id, friendId);
-    const success = await sendMessage(chatId, currentUser.id, messageText.trim());
     
-    if (!success) {
+    // Insert message with reply_to if provided
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content: messageText.trim(),
+          reply_to: replyToId || null,
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         title: "Failed to send message",
         description: "Please try again.",
@@ -247,7 +259,7 @@ const Chat = () => {
     }
   };
 
-  const handleSendImage = async (imageFile: File) => {
+  const handleSendImage = async (imageFile: File, caption?: string) => {
     if (!currentUser || !friendId) return;
     
     try {
@@ -267,14 +279,14 @@ const Chat = () => {
         .from('posts')
         .getPublicUrl(fileName);
 
-      // Send message with image URL
+      // Send message with image URL and caption
       const chatId = createChatId(currentUser.id, friendId);
       const { error: messageError } = await supabase
         .from('messages')
         .insert({
           chat_id: chatId,
           sender_id: currentUser.id,
-          content: '📷 Photo',
+          content: caption || '📷 Photo',
           image_url: publicUrl,
         });
 
@@ -325,16 +337,32 @@ const Chat = () => {
   }
 
   // Convert Supabase messages to ChatWindow format
-  const formattedMessages: Message[] = messages.map(msg => ({
-    id: msg.id,
-    text: msg.content,
-    sender: msg.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
-    timestamp: new Date(msg.created_at || Date.now()),
-    isOwn: msg.sender_id === currentUser.id,
-    audioUrl: msg.audio_url,
-    imageUrl: msg.image_url,
-    isEdited: msg.is_edited
-  }));
+  const formattedMessages: Message[] = messages.map(msg => {
+    const repliedMessage = msg.reply_to 
+      ? messages.find((m: any) => m.id === msg.reply_to)
+      : null;
+
+    return {
+      id: msg.id,
+      text: msg.content,
+      sender: msg.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
+      timestamp: new Date(msg.created_at || Date.now()),
+      isOwn: msg.sender_id === currentUser.id,
+      audioUrl: msg.audio_url,
+      imageUrl: msg.image_url,
+      isEdited: msg.is_edited,
+      replyTo: msg.reply_to,
+      repliedMessage: repliedMessage ? {
+        id: repliedMessage.id,
+        text: repliedMessage.content,
+        sender: repliedMessage.sender_id === currentUser.id ? currentUser.displayName : friend.displayName,
+        timestamp: new Date(repliedMessage.created_at || Date.now()),
+        isOwn: repliedMessage.sender_id === currentUser.id,
+        imageUrl: repliedMessage.image_url,
+        audioUrl: repliedMessage.audio_url,
+      } : undefined
+    };
+  });
 
   return (
     <div className="h-screen flex flex-col bg-background">

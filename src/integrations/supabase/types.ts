@@ -188,6 +188,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_edited: boolean | null
+          reply_to: string | null
           sender_id: string
         }
         Insert: {
@@ -200,6 +201,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          reply_to?: string | null
           sender_id: string
         }
         Update: {
@@ -212,9 +214,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          reply_to?: string | null
           sender_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
