@@ -136,6 +136,39 @@ export const logoutUser = async (): Promise<void> => {
   }
 };
 
+export const deleteAccount = async (userId: string): Promise<boolean> => {
+  try {
+    // Get current session token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error("No active session");
+      return false;
+    }
+
+    // Call edge function to delete account
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (error) {
+      console.error("Delete account error:", error);
+      return false;
+    }
+
+    if (data?.success) {
+      await supabase.auth.signOut();
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return false;
+  }
+};
+
 export const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
   try {
     const fileExt = file.name.split('.').pop();

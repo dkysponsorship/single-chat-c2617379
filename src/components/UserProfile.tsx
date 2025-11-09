@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { User, Settings, Camera, Upload } from "lucide-react";
-import { getCurrentUser, updateUserProfile, uploadAvatar } from "@/services/supabase";
+import { User, Settings, Camera, Upload, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getCurrentUser, updateUserProfile, uploadAvatar, deleteAccount } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { ImageCropper } from "@/components/ImageCropper";
+import { useNavigate } from "react-router-dom";
 
 export const UserProfile = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,8 +27,10 @@ export const UserProfile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -149,6 +153,31 @@ export const UserProfile = () => {
     setIsOpen(false);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+    
+    setShowDeleteDialog(false);
+    setIsUploading(true);
+    
+    const success = await deleteAccount(currentUser.id);
+    
+    if (success) {
+      sessionStorage.removeItem("currentUser");
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+      });
+      navigate("/");
+    } else {
+      toast({
+        title: "Failed to delete account",
+        description: "Unable to delete your account. Please try again.",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -263,16 +292,49 @@ export const UserProfile = () => {
           </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button onClick={handleSave} className="flex-1" disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Save Changes"}
-              </Button>
-              <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
-                Cancel
+            <div className="space-y-2 pt-4">
+              <div className="flex gap-2">
+                <Button onClick={handleSave} className="flex-1" disabled={isUploading}>
+                  {isUploading ? "Uploading..." : "Save Changes"}
+                </Button>
+                <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isUploading}>
+                  Cancel
+                </Button>
+              </div>
+              
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isUploading}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Account
               </Button>
             </div>
           </div>
         )}
+        
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your account
+                and remove all your data including posts, messages, and friendships from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Account
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
