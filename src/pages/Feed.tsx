@@ -12,6 +12,7 @@ import { getAllStories, getUserStories, type UserStories, type Story } from "@/s
 import { getCurrentUser, logoutUser } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ThemeToggle } from "@/components/ThemeToggle";
 const Feed = () => {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -66,11 +67,12 @@ const Feed = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur">
-        <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-left text-sky-400">
+        <h1 className="text-2xl font-bold text-foreground">
           Feed
         </h1>
         
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <CreateStoryDialog userId={currentUser.id} onStoryCreated={() => loadStories(currentUser.id)} />
           <CreatePostDialog userId={currentUser.id} onPostCreated={() => loadPosts(currentUser.id)} />
         </div>

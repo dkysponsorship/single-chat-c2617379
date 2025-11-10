@@ -10,6 +10,7 @@ import { UserProfile } from "@/components/UserProfile";
 import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
+import { ThemeToggle } from "@/components/ThemeToggle";
 const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -55,15 +56,15 @@ const Home = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow">
-        <div className="flex items-center gap-3 rounded-sm bg-zinc-950">
-          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full message-sent">
-            <MessageCircle className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary">
+            <MessageCircle className="w-4 h-4 text-primary-foreground" />
           </div>
-          <h1 className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-3xl font-bold text-slate-50">​Messages</h1>
+          <h1 className="text-2xl font-bold text-foreground">Messages</h1>
         </div>
         
         <div className="flex items-center gap-2">
-          
+          <ThemeToggle />
           <UserSearch />
           <UserProfile />
           <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10">

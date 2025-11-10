@@ -9,6 +9,7 @@ import { getUserPosts, followUser, unfollowUser, isFollowing, getFollowCounts, t
 import { getCurrentUser, getUserProfile } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -88,8 +89,8 @@ const Profile = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-bold">@{profileUser.username}</h1>
-        <div className="w-9" />
+        <h1 className="text-lg font-bold text-foreground">@{profileUser.username}</h1>
+        <ThemeToggle />
       </div>
 
       {/* Profile Header */}

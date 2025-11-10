@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { MessageCircle } from "lucide-react";
 import { registerUser, loginUser } from "@/services/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface AuthScreenProps {
   onLogin: (user: any) => void;
@@ -73,10 +74,14 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full message-sent mb-4">
-            <MessageCircle className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary mb-4">
+            <MessageCircle className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             ChatApp

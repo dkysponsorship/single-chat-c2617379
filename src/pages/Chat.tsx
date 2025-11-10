@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -372,12 +373,13 @@ const Chat = () => {
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="text-lg font-semibold">
+          <h1 className="text-lg font-semibold text-foreground">
             Chat with {friend.displayName}
           </h1>
         </div>
         
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <span className="text-sm text-muted-foreground hidden sm:block">
             {currentUser.displayName}
           </span>
