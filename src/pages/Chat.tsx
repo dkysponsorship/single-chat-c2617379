@@ -19,7 +19,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -379,7 +378,6 @@ const Chat = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <span className="text-sm text-muted-foreground hidden sm:block">
             {currentUser.displayName}
           </span>

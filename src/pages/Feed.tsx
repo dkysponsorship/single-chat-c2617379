@@ -12,7 +12,6 @@ import { getAllStories, getUserStories, type UserStories, type Story } from "@/s
 import { getCurrentUser, logoutUser } from "@/services/supabase";
 import { User as UserType } from "@/types/user";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThemeToggle } from "@/components/ThemeToggle";
 const Feed = () => {
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -72,7 +71,6 @@ const Feed = () => {
         </h1>
         
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <CreateStoryDialog userId={currentUser.id} onStoryCreated={() => loadStories(currentUser.id)} />
           <CreatePostDialog userId={currentUser.id} onPostCreated={() => loadPosts(currentUser.id)} />
         </div>

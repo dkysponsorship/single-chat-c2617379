@@ -10,7 +10,6 @@ import { UserProfile } from "@/components/UserProfile";
 import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/data/mockData";
 import { User } from "@/types/user";
-import { ThemeToggle } from "@/components/ThemeToggle";
 const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -64,7 +63,6 @@ const Home = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <UserSearch />
           <UserProfile />
           <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10">

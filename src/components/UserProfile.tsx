@@ -12,6 +12,7 @@ import { User as UserType } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { ImageCropper } from "@/components/ImageCropper";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const UserProfile = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -290,6 +291,17 @@ export const UserProfile = () => {
               />
             </div>
           </div>
+
+            {/* Theme Toggle Section */}
+            <div className="pt-2 pb-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Theme</Label>
+                  <p className="text-sm text-muted-foreground">Switch between light and dark mode</p>
+                </div>
+                <ThemeToggle />
+              </div>
+            </div>
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-4">
