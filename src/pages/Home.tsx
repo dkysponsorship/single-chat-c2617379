@@ -54,7 +54,7 @@ const Home = () => {
   }
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow pt-safe">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary">
             <MessageCircle className="w-4 h-4 text-primary-foreground" />
@@ -121,7 +121,7 @@ const Home = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4">
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4 pb-safe">
         <Button variant="ghost" size="sm" onClick={() => navigate("/feed")}>
           <HomeIcon className="w-5 h-5" />
         </Button>

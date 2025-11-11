@@ -367,7 +367,7 @@ const Chat = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Navigation */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow pt-safe">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="w-4 h-4" />

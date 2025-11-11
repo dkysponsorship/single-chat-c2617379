@@ -84,7 +84,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur">
+      <div className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur pt-safe">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -188,7 +188,7 @@ const Profile = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4">
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4 pb-safe">
         <Button variant="ghost" size="sm" onClick={() => navigate("/feed")}>
           <Home className="w-5 h-5" />
         </Button>

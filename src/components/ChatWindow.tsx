@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -58,8 +58,12 @@ export const ChatWindow = ({
   const [imageCaption, setImageCaption] = useState("");
   const [showCaptionInput, setShowCaptionInput] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -148,6 +152,47 @@ export const ChatWindow = ({
 
   const cancelReply = () => {
     setReplyingTo(null);
+  };
+
+  const handleAudioClick = (messageId: string, audioUrl: string) => {
+    if (!audioRefs.current[messageId]) {
+      const audio = new Audio(audioUrl);
+      audioRefs.current[messageId] = audio;
+      
+      audio.onended = () => {
+        setPlayingAudioId(null);
+      };
+    }
+
+    const audio = audioRefs.current[messageId];
+    
+    if (playingAudioId === messageId) {
+      audio.pause();
+      setPlayingAudioId(null);
+    } else {
+      // Pause any currently playing audio
+      Object.keys(audioRefs.current).forEach(id => {
+        if (id !== messageId) {
+          audioRefs.current[id].pause();
+        }
+      });
+      
+      audio.play();
+      setPlayingAudioId(messageId);
+    }
+  };
+
+  const handleLongPressStart = (messageId: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setLongPressMessageId(messageId);
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   const imageMessages = messages.filter(m => m.imageUrl);
@@ -269,119 +314,204 @@ export const ChatWindow = ({
                 </Avatar>
               )}
               
-              <ContextMenu>
-                <ContextMenuTrigger>
-                  <div className={cn(
-                    "max-w-[70%] rounded-2xl px-4 py-2 smooth-transition cursor-pointer flex flex-col gap-1",
-                    message.isOwn 
-                      ? "message-sent text-white" 
-                      : "bg-chat-received text-chat-received-foreground"
-                  )}>
-                    {message.repliedMessage && (
-                      <div className={cn(
-                        "text-xs p-2 rounded border-l-2 mb-1",
-                        message.isOwn 
-                          ? "bg-white/10 border-white/30 text-white/70" 
-                          : "bg-muted/50 border-primary/30 text-muted-foreground"
-                      )}>
-                        <div className="flex items-center gap-1 mb-1">
-                          <Reply className="w-3 h-3" />
-                          <span className="font-medium">{message.repliedMessage.isOwn ? 'You' : friend.name}</span>
-                        </div>
-                        <p className="truncate">
-                          {message.repliedMessage.imageUrl ? '📷 Photo' : message.repliedMessage.text}
-                        </p>
-                      </div>
+              {message.audioUrl ? (
+                // Voice message with click to play and long press for options
+                <>
+                  <div 
+                    className={cn(
+                      "max-w-[70%] rounded-3xl px-4 py-3 smooth-transition cursor-pointer flex items-center gap-3",
+                      message.isOwn 
+                        ? "message-sent text-white" 
+                        : "bg-chat-received text-chat-received-foreground"
                     )}
-                    {editingMessageId === message.id ? (
-                      <div className="flex flex-col gap-2">
-                        <Input
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={saveEdit} className="h-7 text-white hover:bg-white/20">
-                            <Check className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={cancelEditing} className="h-7 text-white hover:bg-white/20">
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {message.imageUrl ? (
-                          <div className="flex flex-col gap-2">
-                            <img 
-                              src={message.imageUrl} 
-                              alt="Shared image"
-                              className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer"
-                              onClick={() => window.open(message.imageUrl, '_blank')}
-                            />
-                            {message.text !== '📷 Photo' && (
-                              <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
-                            )}
-                          </div>
-                        ) : message.audioUrl ? (
-                          <div className="flex flex-col gap-2">
-                            <audio controls className="w-full max-w-xs">
-                              <source src={message.audioUrl} type="audio/webm" />
-                              Your browser does not support the audio element.
-                            </audio>
-                            <p className="text-xs opacity-70">{message.text}</p>
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
-                            {message.isEdited && (
-                              <span className={cn(
-                                "text-xs opacity-50 italic",
-                                message.isOwn ? "text-white/50" : "text-muted-foreground"
-                              )}> (edited)</span>
-                            )}
-                          </>
-                        )}
-                        <p className={cn(
-                          "text-xs mt-1 opacity-70",
-                          message.isOwn ? "text-white/70" : "text-muted-foreground"
-                        )}>
-                          {formatTime(message.timestamp)}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem onClick={() => startReplyingTo(message)}>
-                    <Reply className="w-4 h-4 mr-2" />
-                    Reply
-                  </ContextMenuItem>
-                  {message.isOwn && !message.audioUrl && !message.imageUrl && (
-                    <ContextMenuItem onClick={() => startEditingMessage(message)}>
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Edit message
-                    </ContextMenuItem>
-                  )}
-                  <ContextMenuItem 
-                    onClick={() => onDeleteMessage(message.id, false)}
-                    className="text-destructive"
+                    onClick={() => handleAudioClick(message.id, message.audioUrl!)}
+                    onMouseDown={() => handleLongPressStart(message.id)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(message.id)}
+                    onTouchEnd={handleLongPressEnd}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete for me
-                  </ContextMenuItem>
-                  {message.isOwn && (
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      message.isOwn ? "bg-white/20" : "bg-primary/20"
+                    )}>
+                      {playingAudioId === message.id ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className={cn(
+                        "h-8 flex items-center gap-1",
+                        message.isOwn ? "text-white/70" : "text-primary/70"
+                      )}>
+                        {[...Array(20)].map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={cn(
+                              "w-1 rounded-full",
+                              message.isOwn ? "bg-white/50" : "bg-primary/50"
+                            )}
+                            style={{ 
+                              height: `${Math.random() * 100}%`,
+                              minHeight: '20%'
+                            }} 
+                          />
+                        ))}
+                      </div>
+                      <p className={cn(
+                        "text-xs mt-1 opacity-70",
+                        message.isOwn ? "text-white/70" : "text-muted-foreground"
+                      )}>
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                  {longPressMessageId === message.id && (
+                    <DropdownMenu open={true} onOpenChange={(open) => !open && setLongPressMessageId(null)}>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => {
+                          startReplyingTo(message);
+                          setLongPressMessageId(null);
+                        }}>
+                          <Reply className="w-4 h-4 mr-2" />
+                          Reply
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            onDeleteMessage(message.id, false);
+                            setLongPressMessageId(null);
+                          }}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete for me
+                        </DropdownMenuItem>
+                        {message.isOwn && (
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              onDeleteMessage(message.id, true);
+                              setLongPressMessageId(null);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete for everyone
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              ) : (
+                // Regular messages with context menu
+                <ContextMenu>
+                  <ContextMenuTrigger>
+                    <div className={cn(
+                      "max-w-[70%] rounded-3xl px-4 py-2 smooth-transition cursor-pointer flex flex-col gap-1",
+                      message.isOwn 
+                        ? "message-sent text-white" 
+                        : "bg-chat-received text-chat-received-foreground"
+                    )}>
+                      {message.repliedMessage && (
+                        <div className={cn(
+                          "text-xs p-2 rounded border-l-2 mb-1",
+                          message.isOwn 
+                            ? "bg-white/10 border-white/30 text-white/70" 
+                            : "bg-muted/50 border-primary/30 text-muted-foreground"
+                        )}>
+                          <div className="flex items-center gap-1 mb-1">
+                            <Reply className="w-3 h-3" />
+                            <span className="font-medium">{message.repliedMessage.isOwn ? 'You' : friend.name}</span>
+                          </div>
+                          <p className="truncate">
+                            {message.repliedMessage.imageUrl ? '📷 Photo' : message.repliedMessage.text}
+                          </p>
+                        </div>
+                      )}
+                      {editingMessageId === message.id ? (
+                        <div className="flex flex-col gap-2">
+                          <Input
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="bg-white/10 border-white/20 text-white"
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="ghost" onClick={saveEdit} className="h-7 text-white hover:bg-white/20">
+                              <Check className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={cancelEditing} className="h-7 text-white hover:bg-white/20">
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {message.imageUrl ? (
+                            <div className="flex flex-col gap-2">
+                              <img 
+                                src={message.imageUrl} 
+                                alt="Shared image"
+                                className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer"
+                                onClick={() => window.open(message.imageUrl, '_blank')}
+                              />
+                              {message.text !== '📷 Photo' && (
+                                <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
+                              {message.isEdited && (
+                                <span className={cn(
+                                  "text-xs opacity-50 italic",
+                                  message.isOwn ? "text-white/50" : "text-muted-foreground"
+                                )}> (edited)</span>
+                              )}
+                            </>
+                          )}
+                          <p className={cn(
+                            "text-xs mt-1 opacity-70",
+                            message.isOwn ? "text-white/70" : "text-muted-foreground"
+                          )}>
+                            {formatTime(message.timestamp)}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem onClick={() => startReplyingTo(message)}>
+                      <Reply className="w-4 h-4 mr-2" />
+                      Reply
+                    </ContextMenuItem>
+                    {message.isOwn && !message.audioUrl && !message.imageUrl && (
+                      <ContextMenuItem onClick={() => startEditingMessage(message)}>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit message
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuItem 
-                      onClick={() => onDeleteMessage(message.id, true)}
+                      onClick={() => onDeleteMessage(message.id, false)}
                       className="text-destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Delete for everyone
+                      Delete for me
                     </ContextMenuItem>
-                  )}
-                </ContextMenuContent>
-              </ContextMenu>
+                    {message.isOwn && (
+                      <ContextMenuItem 
+                        onClick={() => onDeleteMessage(message.id, true)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete for everyone
+                      </ContextMenuItem>
+                    )}
+                  </ContextMenuContent>
+                </ContextMenu>
+              )}
             </div>
           ))}
           

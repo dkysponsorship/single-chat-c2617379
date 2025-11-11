@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area support for mobile devices */
+@supports (padding: max(0px)) {
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  .pl-safe {
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+  .pr-safe {
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+}
+
 /* Safe area insets for mobile devices (Android/iOS notches, home indicators) */
 :root {
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
