@@ -11,6 +11,7 @@ import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2,
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { ImageViewer } from "./ImageViewer";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Message {
@@ -60,6 +61,7 @@ export const ChatWindow = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -266,7 +268,7 @@ export const ChatWindow = ({
                         src={msg.imageUrl}
                         alt="Shared"
                         className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(msg.imageUrl, '_blank')}
+                        onClick={() => setViewingImage(msg.imageUrl!)}
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
                         <p className="text-white text-xs truncate">{msg.text !== '📷 Photo' ? msg.text : formatTime(msg.timestamp)}</p>
@@ -455,7 +457,7 @@ export const ChatWindow = ({
                                 src={message.imageUrl} 
                                 alt="Shared image"
                                 className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer"
-                                onClick={() => window.open(message.imageUrl, '_blank')}
+                                onClick={() => setViewingImage(message.imageUrl!)}
                               />
                               {message.text !== '📷 Photo' && (
                                 <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
@@ -617,6 +619,8 @@ export const ChatWindow = ({
           </Button>
         </form>
       </div>
+      
+      <ImageViewer imageUrl={viewingImage} onClose={() => setViewingImage(null)} />
     </div>
   );
 };
