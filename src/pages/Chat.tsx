@@ -366,30 +366,12 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Navigation */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow pt-safe">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <h1 className="text-lg font-semibold text-foreground">
-            Chat with {friend.displayName}
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground hidden sm:block">
-            {currentUser.displayName}
-          </span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
       {/* Chat Window */}
-      <div className="flex-1">
+      <div className="flex-1 h-full">
         <ChatWindow
+          onBack={handleBack}
+          onLogout={handleLogout}
+          currentUserName={currentUser.displayName}
           friend={{
             id: friend.id,
             name: friend.displayName,
