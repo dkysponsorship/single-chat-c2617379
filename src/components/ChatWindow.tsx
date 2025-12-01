@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -38,6 +38,9 @@ interface ChatWindowProps {
   isTyping: boolean;
   onSendVoice?: (audioBlob: Blob) => void;
   onSendImage?: (imageFile: File, caption?: string) => void;
+  onBack?: () => void;
+  onLogout?: () => void;
+  currentUserName?: string;
 }
 
 export const ChatWindow = ({ 
@@ -50,7 +53,10 @@ export const ChatWindow = ({
   onEditMessage,
   isTyping,
   onSendVoice,
-  onSendImage
+  onSendImage,
+  onBack,
+  onLogout,
+  currentUserName
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -263,9 +269,14 @@ export const ChatWindow = ({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
+      {/* Chat Header - Fixed */}
+      <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-safe border-b border-border bg-card">
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
           <div className="relative">
             <Avatar className="w-10 h-10">
               <AvatarImage src={friend.avatar} alt={friend.name} />
@@ -287,18 +298,28 @@ export const ChatWindow = ({
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
+          {onLogout && currentUserName && (
+            <div className="flex items-center gap-2 mr-2">
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {currentUserName}
+              </span>
+              <Button variant="ghost" size="sm" onClick={onLogout} className="h-8 w-8 p-0">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" disabled={imageMessages.length === 0}>
+              <Button variant="ghost" size="sm" disabled={imageMessages.length === 0} className="h-8 w-8 p-0">
                 <Images className="w-4 h-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-lg">
+            <SheetContent className="w-full sm:max-w-lg pt-safe">
               <SheetHeader>
                 <SheetTitle>Shared Photos</SheetTitle>
               </SheetHeader>
-              <ScrollArea className="h-[calc(100vh-100px)] mt-4">
+              <ScrollArea className="h-[calc(100vh-100px-env(safe-area-inset-top))] mt-4">
                 <div className="grid grid-cols-2 gap-2">
                   {imageMessages.map((msg) => (
                     <div key={msg.id} className="relative group">
@@ -319,7 +340,7 @@ export const ChatWindow = ({
           </Sheet>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <MoreVertical className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -333,8 +354,8 @@ export const ChatWindow = ({
         </div>
       </div>
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
+      {/* Messages Area - With top padding for fixed header */}
+      <ScrollArea className="flex-1 p-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
         <div className="space-y-4">
           {messages.map((message, index) => {
             const swipeState = swipeStates[message.id];
