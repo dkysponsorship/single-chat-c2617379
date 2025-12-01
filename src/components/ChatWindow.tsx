@@ -302,7 +302,7 @@ export const ChatWindow = ({
             <div
               key={message.id}
               className={cn(
-                "flex gap-3 message-enter",
+                "flex gap-2 message-enter w-full",
                 message.isOwn ? "justify-end" : "justify-start"
               )}
               style={{ animationDelay: `${index * 50}ms` }}
@@ -541,7 +541,7 @@ export const ChatWindow = ({
       </ScrollArea>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-border bg-card">
+      <div className="p-4 pb-safe border-t border-border bg-card">
         {showCaptionInput && selectedImage && (
           <div className="mb-3 p-3 bg-muted rounded-lg">
             <div className="flex items-start gap-3">
