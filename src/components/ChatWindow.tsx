@@ -62,6 +62,7 @@ export const ChatWindow = ({
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [swipeStates, setSwipeStates] = useState<{ [key: string]: { startX: number; currentX: number; isSwiping: boolean } }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
@@ -197,6 +198,43 @@ export const ChatWindow = ({
     }
   };
 
+  const handleSwipeStart = (messageId: string, clientX: number) => {
+    setSwipeStates(prev => ({
+      ...prev,
+      [messageId]: { startX: clientX, currentX: clientX, isSwiping: true }
+    }));
+  };
+
+  const handleSwipeMove = (messageId: string, clientX: number) => {
+    const swipeState = swipeStates[messageId];
+    if (swipeState && swipeState.isSwiping) {
+      const deltaX = clientX - swipeState.startX;
+      // Only allow left swipe (negative delta) and limit to 80px
+      const limitedDelta = Math.max(Math.min(deltaX, 0), -80);
+      setSwipeStates(prev => ({
+        ...prev,
+        [messageId]: { ...swipeState, currentX: swipeState.startX + limitedDelta }
+      }));
+    }
+  };
+
+  const handleSwipeEnd = (messageId: string, message: Message) => {
+    const swipeState = swipeStates[messageId];
+    if (swipeState && swipeState.isSwiping) {
+      const deltaX = swipeState.currentX - swipeState.startX;
+      // Trigger reply if swiped more than 60px to the left
+      if (deltaX < -60) {
+        startReplyingTo(message);
+      }
+      // Reset swipe state
+      setSwipeStates(prev => {
+        const newStates = { ...prev };
+        delete newStates[messageId];
+        return newStates;
+      });
+    }
+  };
+
   const imageMessages = messages.filter(m => m.imageUrl);
 
   const renderMessageText = (text: string) => {
@@ -298,17 +336,49 @@ export const ChatWindow = ({
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((message, index) => (
+          {messages.map((message, index) => {
+            const swipeState = swipeStates[message.id];
+            const swipeOffset = swipeState ? swipeState.currentX - swipeState.startX : 0;
+            const swipeProgress = Math.abs(swipeOffset) / 60; // 0 to 1 progress
+
+            return (
             <div
               key={message.id}
               className={cn(
-                "flex gap-2 message-enter w-full",
+                "flex gap-2 message-enter w-full relative",
                 message.isOwn ? "justify-end" : "justify-start"
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
+              {/* Reply icon that appears when swiping */}
+              {swipeProgress > 0 && (
+                <div 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ 
+                    opacity: swipeProgress,
+                    transform: `translateY(-50%) scale(${0.5 + swipeProgress * 0.5})`
+                  }}
+                >
+                  <Reply className="w-5 h-5 text-primary" />
+                </div>
+              )}
+
+              <div 
+                className="flex gap-2 items-end w-full"
+                style={{
+                  transform: `translateX(${swipeOffset}px)`,
+                  transition: swipeState?.isSwiping ? 'none' : 'transform 0.3s ease-out'
+                }}
+                onMouseDown={(e) => handleSwipeStart(message.id, e.clientX)}
+                onMouseMove={(e) => swipeState?.isSwiping && handleSwipeMove(message.id, e.clientX)}
+                onMouseUp={() => handleSwipeEnd(message.id, message)}
+                onMouseLeave={() => handleSwipeEnd(message.id, message)}
+                onTouchStart={(e) => handleSwipeStart(message.id, e.touches[0].clientX)}
+                onTouchMove={(e) => swipeState?.isSwiping && handleSwipeMove(message.id, e.touches[0].clientX)}
+                onTouchEnd={() => handleSwipeEnd(message.id, message)}
+              >
               {!message.isOwn && (
-                <Avatar className="w-8 h-8 mt-1">
+                <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
                   <AvatarImage src={friend.avatar} alt={friend.name} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                     {friend.name.slice(0, 2).toUpperCase()}
@@ -514,8 +584,10 @@ export const ChatWindow = ({
                   </ContextMenuContent>
                 </ContextMenu>
               )}
+              </div>
             </div>
-          ))}
+            );
+          })}
           
           {/* Typing Indicator */}
           {isTyping && (
