@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -24,6 +24,7 @@ export interface Message {
   isEdited?: boolean;
   replyTo?: string;
   repliedMessage?: Message;
+  readAt?: Date | null;
 }
 interface ChatWindowProps {
   friend: Friend;
@@ -363,8 +364,11 @@ export const ChatWindow = ({
                         minHeight: '20%'
                       }} />)}
                       </div>
-                      <p className={cn("text-xs opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
+                      <p className={cn("text-xs opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
                         {formatTime(message.timestamp)}
+                        {message.isOwn && (
+                          <CheckCheck className={cn("w-3.5 h-3.5", message.readAt ? "text-yellow-400" : "text-white/50")} />
+                        )}
                       </p>
                     </div>
                   </div>
@@ -425,8 +429,11 @@ export const ChatWindow = ({
                               <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
                               {message.isEdited && <span className={cn("text-xs opacity-50 italic", message.isOwn ? "text-white/50" : "text-muted-foreground")}> (edited)</span>}
                             </>}
-                          <p className={cn("text-xs mt-1 opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
+                          <p className={cn("text-xs mt-0.5 opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
                             {formatTime(message.timestamp)}
+                            {message.isOwn && (
+                              <CheckCheck className={cn("w-3.5 h-3.5", message.readAt ? "text-yellow-400" : "text-white/50")} />
+                            )}
                           </p>
                         </>}
                     </div>
