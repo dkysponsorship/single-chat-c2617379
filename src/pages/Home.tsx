@@ -54,7 +54,7 @@ const Home = () => {
   }
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow pt-safe">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-border bg-card sidebar-shadow pt-safe py-[2px]">
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary">
             <MessageCircle className="w-4 h-4 text-primary-foreground" />
