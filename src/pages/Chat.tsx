@@ -83,6 +83,25 @@ const Chat = () => {
     }
   }, [friendId, navigate]);
 
+  // Mark messages as read when chat is opened
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (!currentUser || !friendId || friendId === AI_FRIEND_ID) return;
+      
+      const chatId = createChatId(currentUser.id, friendId);
+      
+      // Mark all unread messages from friend as read
+      await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('chat_id', chatId)
+        .neq('sender_id', currentUser.id)
+        .is('read_at', null);
+    };
+    
+    markMessagesAsRead();
+  }, [messages, currentUser, friendId]);
+
   const handleSendMessage = async (messageText: string, replyToId?: string) => {
     if (!currentUser || !friendId || !messageText.trim()) return;
     
@@ -352,6 +371,7 @@ const Chat = () => {
       imageUrl: msg.image_url,
       isEdited: msg.is_edited,
       replyTo: msg.reply_to,
+      readAt: msg.read_at ? new Date(msg.read_at) : null,
       repliedMessage: repliedMessage ? {
         id: repliedMessage.id,
         text: repliedMessage.content,

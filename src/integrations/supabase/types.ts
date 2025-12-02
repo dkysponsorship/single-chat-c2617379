@@ -188,6 +188,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_edited: boolean | null
+          read_at: string | null
           reply_to: string | null
           sender_id: string
         }
@@ -201,6 +202,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          read_at?: string | null
           reply_to?: string | null
           sender_id: string
         }
@@ -214,6 +216,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          read_at?: string | null
           reply_to?: string | null
           sender_id?: string
         }
