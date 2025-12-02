@@ -397,7 +397,7 @@ export const ChatWindow = ({
               // Regular messages with context menu
               <ContextMenu>
                   <ContextMenuTrigger>
-                    <div className={cn("max-w-[70%] rounded-3xl px-4 py-2 smooth-transition cursor-pointer flex flex-col gap-1", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")}>
+                    <div className={cn("max-w-[75%] rounded-2xl px-3 py-1.5 smooth-transition cursor-pointer flex flex-col", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")}>
                       {message.repliedMessage && <div className={cn("text-xs p-2 rounded border-l-2 mb-1", message.isOwn ? "bg-white/10 border-white/30 text-white/70" : "bg-muted/50 border-primary/30 text-muted-foreground")}>
                           <div className="flex items-center gap-1 mb-1">
                             <Reply className="w-3 h-3" />
