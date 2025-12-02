@@ -13,7 +13,6 @@ import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { ImageViewer } from "./ImageViewer";
 import { useToast } from "@/hooks/use-toast";
-
 export interface Message {
   id: string;
   text: string;
@@ -26,7 +25,6 @@ export interface Message {
   replyTo?: string;
   repliedMessage?: Message;
 }
-
 interface ChatWindowProps {
   friend: Friend;
   messages: Message[];
@@ -42,11 +40,10 @@ interface ChatWindowProps {
   onLogout?: () => void;
   currentUserName?: string;
 }
-
-export const ChatWindow = ({ 
-  friend, 
-  messages, 
-  currentUser, 
+export const ChatWindow = ({
+  friend,
+  messages,
+  currentUser,
   onSendMessage,
   onDeleteChat,
   onDeleteMessage,
@@ -68,21 +65,30 @@ export const ChatWindow = ({
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [longPressMessageId, setLongPressMessageId] = useState<string | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
-  const [swipeStates, setSwipeStates] = useState<{ [key: string]: { startX: number; currentX: number; isSwiping: boolean } }>({});
+  const [swipeStates, setSwipeStates] = useState<{
+    [key: string]: {
+      startX: number;
+      currentX: number;
+      isSwiping: boolean;
+    };
+  }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const audioRefs = useRef<{
+    [key: string]: HTMLAudioElement;
+  }>({});
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth"
+    });
   };
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
@@ -91,15 +97,13 @@ export const ChatWindow = ({
       setReplyingTo(null);
     }
   };
-
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: true 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   };
-
   const handleSendVoice = (audioBlob: Blob) => {
     if (onSendVoice) {
       onSendVoice(audioBlob);
@@ -107,28 +111,24 @@ export const ChatWindow = ({
       toast({
         title: "Voice notes not supported",
         description: "Voice notes are not available for this chat.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const startEditingMessage = (message: Message) => {
     setEditingMessageId(message.id);
     setEditContent(message.text);
   };
-
   const cancelEditing = () => {
     setEditingMessageId(null);
     setEditContent("");
   };
-
   const saveEdit = () => {
     if (editingMessageId && editContent.trim()) {
       onEditMessage(editingMessageId, editContent.trim());
       cancelEditing();
     }
   };
-
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -139,7 +139,6 @@ export const ChatWindow = ({
       fileInputRef.current.value = '';
     }
   };
-
   const handleSendImageWithCaption = () => {
     if (selectedImage && onSendImage) {
       onSendImage(selectedImage, imageCaption.trim() || undefined);
@@ -148,33 +147,26 @@ export const ChatWindow = ({
       setShowCaptionInput(false);
     }
   };
-
   const handleCancelImageSend = () => {
     setSelectedImage(null);
     setImageCaption("");
     setShowCaptionInput(false);
   };
-
   const startReplyingTo = (message: Message) => {
     setReplyingTo(message);
   };
-
   const cancelReply = () => {
     setReplyingTo(null);
   };
-
   const handleAudioClick = (messageId: string, audioUrl: string) => {
     if (!audioRefs.current[messageId]) {
       const audio = new Audio(audioUrl);
       audioRefs.current[messageId] = audio;
-      
       audio.onended = () => {
         setPlayingAudioId(null);
       };
     }
-
     const audio = audioRefs.current[messageId];
-    
     if (playingAudioId === messageId) {
       audio.pause();
       setPlayingAudioId(null);
@@ -185,32 +177,31 @@ export const ChatWindow = ({
           audioRefs.current[id].pause();
         }
       });
-      
       audio.play();
       setPlayingAudioId(messageId);
     }
   };
-
   const handleLongPressStart = (messageId: string) => {
     longPressTimerRef.current = setTimeout(() => {
       setLongPressMessageId(messageId);
     }, 500);
   };
-
   const handleLongPressEnd = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
   };
-
   const handleSwipeStart = (messageId: string, clientX: number) => {
     setSwipeStates(prev => ({
       ...prev,
-      [messageId]: { startX: clientX, currentX: clientX, isSwiping: true }
+      [messageId]: {
+        startX: clientX,
+        currentX: clientX,
+        isSwiping: true
+      }
     }));
   };
-
   const handleSwipeMove = (messageId: string, clientX: number) => {
     const swipeState = swipeStates[messageId];
     if (swipeState && swipeState.isSwiping) {
@@ -219,11 +210,13 @@ export const ChatWindow = ({
       const limitedDelta = Math.max(Math.min(deltaX, 0), -80);
       setSwipeStates(prev => ({
         ...prev,
-        [messageId]: { ...swipeState, currentX: swipeState.startX + limitedDelta }
+        [messageId]: {
+          ...swipeState,
+          currentX: swipeState.startX + limitedDelta
+        }
       }));
     }
   };
-
   const handleSwipeEnd = (messageId: string, message: Message) => {
     const swipeState = swipeStates[messageId];
     if (swipeState && swipeState.isSwiping) {
@@ -234,49 +227,35 @@ export const ChatWindow = ({
       }
       // Reset swipe state
       setSwipeStates(prev => {
-        const newStates = { ...prev };
+        const newStates = {
+          ...prev
+        };
         delete newStates[messageId];
         return newStates;
       });
     }
   };
-
   const imageMessages = messages.filter(m => m.imageUrl);
-
   const renderMessageText = (text: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
-    
     return parts.map((part, index) => {
       if (part.match(urlRegex)) {
-        return (
-          <a 
-            key={index}
-            href={part} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="underline hover:opacity-80 inline-flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-          >
+        return <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
             <Link2 className="w-3 h-3" />
             {part.length > 30 ? part.substring(0, 30) + '...' : part}
-          </a>
-        );
+          </a>;
       }
       return <span key={index}>{part}</span>;
     });
   };
-
-  return (
-    <div className="flex flex-col h-full bg-background">
+  return <div className="flex flex-col h-full bg-background">
       {/* Chat Header - Fixed */}
       <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-safe border-b border-border bg-card">
         <div className="flex items-center gap-2">
-          {onBack && (
-            <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
+          {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
               <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
+            </Button>}
           <div className="relative">
             <Avatar className="w-10 h-10">
               <AvatarImage src={friend.avatar} alt={friend.name} />
@@ -284,12 +263,7 @@ export const ChatWindow = ({
                 {friend.name.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
-                friend.isOnline ? "bg-status-online" : "bg-status-offline"
-              )}
-            />
+            <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-status-online" : "bg-status-offline")} />
           </div>
           <div>
             <h3 className="font-semibold">{friend.name}</h3>
@@ -299,16 +273,12 @@ export const ChatWindow = ({
           </div>
         </div>
         <div className="flex gap-1">
-          {onLogout && currentUserName && (
-            <div className="flex items-center gap-2 mr-2">
+          {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
               </span>
-              <Button variant="ghost" size="sm" onClick={onLogout} className="h-8 w-8 p-0">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+              
+            </div>}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm" disabled={imageMessages.length === 0} className="h-8 w-8 p-0">
@@ -321,19 +291,12 @@ export const ChatWindow = ({
               </SheetHeader>
               <ScrollArea className="h-[calc(100vh-100px-env(safe-area-inset-top))] mt-4">
                 <div className="grid grid-cols-2 gap-2">
-                  {imageMessages.map((msg) => (
-                    <div key={msg.id} className="relative group">
-                      <img
-                        src={msg.imageUrl}
-                        alt="Shared"
-                        className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setViewingImage(msg.imageUrl!)}
-                      />
+                  {imageMessages.map(msg => <div key={msg.id} className="relative group">
+                      <img src={msg.imageUrl} alt="Shared" className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(msg.imageUrl!)} />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
                         <p className="text-white text-xs truncate">{msg.text !== '📷 Photo' ? msg.text : formatTime(msg.timestamp)}</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </ScrollArea>
             </SheetContent>
@@ -355,165 +318,87 @@ export const ChatWindow = ({
       </div>
 
       {/* Messages Area - With top padding for fixed header */}
-      <ScrollArea className="flex-1 p-4" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
+      <ScrollArea className="flex-1 p-4" style={{
+      paddingTop: 'calc(4rem + env(safe-area-inset-top))'
+    }}>
         <div className="space-y-4">
           {messages.map((message, index) => {
-            const swipeState = swipeStates[message.id];
-            const swipeOffset = swipeState ? swipeState.currentX - swipeState.startX : 0;
-            const swipeProgress = Math.abs(swipeOffset) / 60; // 0 to 1 progress
+          const swipeState = swipeStates[message.id];
+          const swipeOffset = swipeState ? swipeState.currentX - swipeState.startX : 0;
+          const swipeProgress = Math.abs(swipeOffset) / 60; // 0 to 1 progress
 
-            return (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-2 message-enter w-full relative",
-                message.isOwn ? "justify-end" : "justify-start"
-              )}
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
+          return <div key={message.id} className={cn("flex gap-2 message-enter w-full relative", message.isOwn ? "justify-end" : "justify-start")} style={{
+            animationDelay: `${index * 50}ms`
+          }}>
               {/* Reply icon that appears when swiping */}
-              {swipeProgress > 0 && (
-                <div 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ 
-                    opacity: swipeProgress,
-                    transform: `translateY(-50%) scale(${0.5 + swipeProgress * 0.5})`
-                  }}
-                >
+              {swipeProgress > 0 && <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{
+              opacity: swipeProgress,
+              transform: `translateY(-50%) scale(${0.5 + swipeProgress * 0.5})`
+            }}>
                   <Reply className="w-5 h-5 text-primary" />
-                </div>
-              )}
+                </div>}
 
-              <div 
-                className="flex gap-2 items-end w-full"
-                style={{
-                  transform: `translateX(${swipeOffset}px)`,
-                  transition: swipeState?.isSwiping ? 'none' : 'transform 0.3s ease-out'
-                }}
-                onMouseDown={(e) => handleSwipeStart(message.id, e.clientX)}
-                onMouseMove={(e) => swipeState?.isSwiping && handleSwipeMove(message.id, e.clientX)}
-                onMouseUp={() => handleSwipeEnd(message.id, message)}
-                onMouseLeave={() => handleSwipeEnd(message.id, message)}
-                onTouchStart={(e) => handleSwipeStart(message.id, e.touches[0].clientX)}
-                onTouchMove={(e) => swipeState?.isSwiping && handleSwipeMove(message.id, e.touches[0].clientX)}
-                onTouchEnd={() => handleSwipeEnd(message.id, message)}
-              >
-              {!message.isOwn && (
-                <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
+              <div className="flex gap-2 items-end w-full" style={{
+              transform: `translateX(${swipeOffset}px)`,
+              transition: swipeState?.isSwiping ? 'none' : 'transform 0.3s ease-out'
+            }} onMouseDown={e => handleSwipeStart(message.id, e.clientX)} onMouseMove={e => swipeState?.isSwiping && handleSwipeMove(message.id, e.clientX)} onMouseUp={() => handleSwipeEnd(message.id, message)} onMouseLeave={() => handleSwipeEnd(message.id, message)} onTouchStart={e => handleSwipeStart(message.id, e.touches[0].clientX)} onTouchMove={e => swipeState?.isSwiping && handleSwipeMove(message.id, e.touches[0].clientX)} onTouchEnd={() => handleSwipeEnd(message.id, message)}>
+              {!message.isOwn && <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
                   <AvatarImage src={friend.avatar} alt={friend.name} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                     {friend.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
-                </Avatar>
-              )}
+                </Avatar>}
               
-              {message.audioUrl ? (
-                // Voice message with click to play and long press for options
-                <>
-                  <div 
-                    className={cn(
-                      "max-w-[70%] rounded-3xl px-4 py-3 smooth-transition cursor-pointer flex items-center gap-3",
-                      message.isOwn 
-                        ? "message-sent text-white" 
-                        : "bg-chat-received text-chat-received-foreground"
-                    )}
-                    onClick={() => handleAudioClick(message.id, message.audioUrl!)}
-                    onMouseDown={() => handleLongPressStart(message.id)}
-                    onMouseUp={handleLongPressEnd}
-                    onMouseLeave={handleLongPressEnd}
-                    onTouchStart={() => handleLongPressStart(message.id)}
-                    onTouchEnd={handleLongPressEnd}
-                  >
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center",
-                      message.isOwn ? "bg-white/20" : "bg-primary/20"
-                    )}>
-                      {playingAudioId === message.id ? (
-                        <Pause className="w-5 h-5" />
-                      ) : (
-                        <Play className="w-5 h-5" />
-                      )}
+              {message.audioUrl ?
+              // Voice message with click to play and long press for options
+              <>
+                  <div className={cn("max-w-[70%] rounded-3xl px-4 py-3 smooth-transition cursor-pointer flex items-center gap-3", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} onClick={() => handleAudioClick(message.id, message.audioUrl!)} onMouseDown={() => handleLongPressStart(message.id)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd} onTouchStart={() => handleLongPressStart(message.id)} onTouchEnd={handleLongPressEnd}>
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
+                      {playingAudioId === message.id ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                     </div>
                     <div className="flex-1">
-                      <div className={cn(
-                        "h-8 flex items-center gap-1",
-                        message.isOwn ? "text-white/70" : "text-primary/70"
-                      )}>
-                        {[...Array(20)].map((_, i) => (
-                          <div 
-                            key={i} 
-                            className={cn(
-                              "w-1 rounded-full",
-                              message.isOwn ? "bg-white/50" : "bg-primary/50"
-                            )}
-                            style={{ 
-                              height: `${Math.random() * 100}%`,
-                              minHeight: '20%'
-                            }} 
-                          />
-                        ))}
+                      <div className={cn("h-8 flex items-center gap-1", message.isOwn ? "text-white/70" : "text-primary/70")}>
+                        {[...Array(20)].map((_, i) => <div key={i} className={cn("w-1 rounded-full", message.isOwn ? "bg-white/50" : "bg-primary/50")} style={{
+                        height: `${Math.random() * 100}%`,
+                        minHeight: '20%'
+                      }} />)}
                       </div>
-                      <p className={cn(
-                        "text-xs mt-1 opacity-70",
-                        message.isOwn ? "text-white/70" : "text-muted-foreground"
-                      )}>
+                      <p className={cn("text-xs mt-1 opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
                         {formatTime(message.timestamp)}
                       </p>
                     </div>
                   </div>
-                  {longPressMessageId === message.id && (
-                    <DropdownMenu open={true} onOpenChange={(open) => !open && setLongPressMessageId(null)}>
+                  {longPressMessageId === message.id && <DropdownMenu open={true} onOpenChange={open => !open && setLongPressMessageId(null)}>
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => {
-                          startReplyingTo(message);
-                          setLongPressMessageId(null);
-                        }}>
+                      startReplyingTo(message);
+                      setLongPressMessageId(null);
+                    }}>
                           <Reply className="w-4 h-4 mr-2" />
                           Reply
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => {
-                            onDeleteMessage(message.id, false);
-                            setLongPressMessageId(null);
-                          }}
-                          className="text-destructive"
-                        >
+                        <DropdownMenuItem onClick={() => {
+                      onDeleteMessage(message.id, false);
+                      setLongPressMessageId(null);
+                    }} className="text-destructive">
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete for me
                         </DropdownMenuItem>
-                        {message.isOwn && (
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              onDeleteMessage(message.id, true);
-                              setLongPressMessageId(null);
-                            }}
-                            className="text-destructive"
-                          >
+                        {message.isOwn && <DropdownMenuItem onClick={() => {
+                      onDeleteMessage(message.id, true);
+                      setLongPressMessageId(null);
+                    }} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete for everyone
-                          </DropdownMenuItem>
-                        )}
+                          </DropdownMenuItem>}
                       </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </>
-              ) : (
-                // Regular messages with context menu
-                <ContextMenu>
+                    </DropdownMenu>}
+                </> :
+              // Regular messages with context menu
+              <ContextMenu>
                   <ContextMenuTrigger>
-                    <div className={cn(
-                      "max-w-[70%] rounded-3xl px-4 py-2 smooth-transition cursor-pointer flex flex-col gap-1",
-                      message.isOwn 
-                        ? "message-sent text-white" 
-                        : "bg-chat-received text-chat-received-foreground"
-                    )}>
-                      {message.repliedMessage && (
-                        <div className={cn(
-                          "text-xs p-2 rounded border-l-2 mb-1",
-                          message.isOwn 
-                            ? "bg-white/10 border-white/30 text-white/70" 
-                            : "bg-muted/50 border-primary/30 text-muted-foreground"
-                        )}>
+                    <div className={cn("max-w-[70%] rounded-3xl px-4 py-2 smooth-transition cursor-pointer flex flex-col gap-1", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")}>
+                      {message.repliedMessage && <div className={cn("text-xs p-2 rounded border-l-2 mb-1", message.isOwn ? "bg-white/10 border-white/30 text-white/70" : "bg-muted/50 border-primary/30 text-muted-foreground")}>
                           <div className="flex items-center gap-1 mb-1">
                             <Reply className="w-3 h-3" />
                             <span className="font-medium">{message.repliedMessage.isOwn ? 'You' : friend.name}</span>
@@ -521,16 +406,9 @@ export const ChatWindow = ({
                           <p className="truncate">
                             {message.repliedMessage.imageUrl ? '📷 Photo' : message.repliedMessage.text}
                           </p>
-                        </div>
-                      )}
-                      {editingMessageId === message.id ? (
-                        <div className="flex flex-col gap-2">
-                          <Input
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            className="bg-white/10 border-white/20 text-white"
-                            autoFocus
-                          />
+                        </div>}
+                      {editingMessageId === message.id ? <div className="flex flex-col gap-2">
+                          <Input value={editContent} onChange={e => setEditContent(e.target.value)} className="bg-white/10 border-white/20 text-white" autoFocus />
                           <div className="flex gap-2">
                             <Button size="sm" variant="ghost" onClick={saveEdit} className="h-7 text-white hover:bg-white/20">
                               <Check className="w-3 h-3" />
@@ -539,40 +417,18 @@ export const ChatWindow = ({
                               <X className="w-3 h-3" />
                             </Button>
                           </div>
-                        </div>
-                      ) : (
-                        <>
-                          {message.imageUrl ? (
-                            <div className="flex flex-col gap-2">
-                              <img 
-                                src={message.imageUrl} 
-                                alt="Shared image"
-                                className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer"
-                                onClick={() => setViewingImage(message.imageUrl!)}
-                              />
-                              {message.text !== '📷 Photo' && (
-                                <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <>
+                        </div> : <>
+                          {message.imageUrl ? <div className="flex flex-col gap-2">
+                              <img src={message.imageUrl} alt="Shared image" className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer" onClick={() => setViewingImage(message.imageUrl!)} />
+                              {message.text !== '📷 Photo' && <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>}
+                            </div> : <>
                               <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>
-                              {message.isEdited && (
-                                <span className={cn(
-                                  "text-xs opacity-50 italic",
-                                  message.isOwn ? "text-white/50" : "text-muted-foreground"
-                                )}> (edited)</span>
-                              )}
-                            </>
-                          )}
-                          <p className={cn(
-                            "text-xs mt-1 opacity-70",
-                            message.isOwn ? "text-white/70" : "text-muted-foreground"
-                          )}>
+                              {message.isEdited && <span className={cn("text-xs opacity-50 italic", message.isOwn ? "text-white/50" : "text-muted-foreground")}> (edited)</span>}
+                            </>}
+                          <p className={cn("text-xs mt-1 opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
                             {formatTime(message.timestamp)}
                           </p>
-                        </>
-                      )}
+                        </>}
                     </div>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
@@ -580,39 +436,26 @@ export const ChatWindow = ({
                       <Reply className="w-4 h-4 mr-2" />
                       Reply
                     </ContextMenuItem>
-                    {message.isOwn && !message.audioUrl && !message.imageUrl && (
-                      <ContextMenuItem onClick={() => startEditingMessage(message)}>
+                    {message.isOwn && !message.audioUrl && !message.imageUrl && <ContextMenuItem onClick={() => startEditingMessage(message)}>
                         <Edit2 className="w-4 h-4 mr-2" />
                         Edit message
-                      </ContextMenuItem>
-                    )}
-                    <ContextMenuItem 
-                      onClick={() => onDeleteMessage(message.id, false)}
-                      className="text-destructive"
-                    >
+                      </ContextMenuItem>}
+                    <ContextMenuItem onClick={() => onDeleteMessage(message.id, false)} className="text-destructive">
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete for me
                     </ContextMenuItem>
-                    {message.isOwn && (
-                      <ContextMenuItem 
-                        onClick={() => onDeleteMessage(message.id, true)}
-                        className="text-destructive"
-                      >
+                    {message.isOwn && <ContextMenuItem onClick={() => onDeleteMessage(message.id, true)} className="text-destructive">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete for everyone
-                      </ContextMenuItem>
-                    )}
+                      </ContextMenuItem>}
                   </ContextMenuContent>
-                </ContextMenu>
-              )}
+                </ContextMenu>}
               </div>
-            </div>
-            );
-          })}
+            </div>;
+        })}
           
           {/* Typing Indicator */}
-          {isTyping && (
-            <div className="flex gap-3 justify-start">
+          {isTyping && <div className="flex gap-3 justify-start">
               <Avatar className="w-8 h-8 mt-1">
                 <AvatarImage src={friend.avatar} alt={friend.name} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
@@ -622,12 +465,15 @@ export const ChatWindow = ({
               <div className="bg-chat-received text-chat-received-foreground rounded-2xl px-4 py-2">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-typing rounded-full typing-dots"></div>
-                  <div className="w-2 h-2 bg-typing rounded-full typing-dots" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-typing rounded-full typing-dots" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="w-2 h-2 bg-typing rounded-full typing-dots" style={{
+                animationDelay: '0.2s'
+              }}></div>
+                  <div className="w-2 h-2 bg-typing rounded-full typing-dots" style={{
+                animationDelay: '0.4s'
+              }}></div>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           <div ref={messagesEndRef} />
         </div>
@@ -635,21 +481,11 @@ export const ChatWindow = ({
 
       {/* Message Input */}
       <div className="p-4 pb-safe border-t border-border bg-card">
-        {showCaptionInput && selectedImage && (
-          <div className="mb-3 p-3 bg-muted rounded-lg">
+        {showCaptionInput && selectedImage && <div className="mb-3 p-3 bg-muted rounded-lg">
             <div className="flex items-start gap-3">
-              <img 
-                src={URL.createObjectURL(selectedImage)} 
-                alt="Preview" 
-                className="w-16 h-16 object-cover rounded"
-              />
+              <img src={URL.createObjectURL(selectedImage)} alt="Preview" className="w-16 h-16 object-cover rounded" />
               <div className="flex-1">
-                <Textarea
-                  value={imageCaption}
-                  onChange={(e) => setImageCaption(e.target.value)}
-                  placeholder="Add a caption (optional)..."
-                  className="min-h-[60px] resize-none"
-                />
+                <Textarea value={imageCaption} onChange={e => setImageCaption(e.target.value)} placeholder="Add a caption (optional)..." className="min-h-[60px] resize-none" />
                 <div className="flex gap-2 mt-2">
                   <Button size="sm" onClick={handleSendImageWithCaption}>
                     Send
@@ -660,10 +496,8 @@ export const ChatWindow = ({
                 </div>
               </div>
             </div>
-          </div>
-        )}
-        {replyingTo && (
-          <div className="mb-2 p-2 bg-muted rounded-lg flex items-start justify-between gap-2">
+          </div>}
+        {replyingTo && <div className="mb-2 p-2 bg-muted rounded-lg flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                 <Reply className="w-3 h-3" />
@@ -674,46 +508,20 @@ export const ChatWindow = ({
             <Button variant="ghost" size="sm" onClick={cancelReply} className="h-6 w-6 p-0">
               <XCircle className="w-4 h-4" />
             </Button>
-          </div>
-        )}
+          </div>}
         <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="hidden"
-          />
-          {onSendImage && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-10"
-            >
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+          {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
               <ImageIcon className="w-4 h-4" />
-            </Button>
-          )}
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={`Message ${friend.name}...`}
-            className="flex-1 h-10 bg-background border-border focus:ring-primary"
-          />
+            </Button>}
+          <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder={`Message ${friend.name}...`} className="flex-1 h-10 bg-background border-border focus:ring-primary" />
           <VoiceRecorder onSendVoice={handleSendVoice} />
-          <Button 
-            type="submit" 
-            size="sm" 
-            className="message-sent border-0 h-10 px-4"
-            disabled={!newMessage.trim()}
-          >
+          <Button type="submit" size="sm" className="message-sent border-0 h-10 px-4" disabled={!newMessage.trim()}>
             <Send className="w-4 h-4" />
           </Button>
         </form>
       </div>
       
       <ImageViewer imageUrl={viewingImage} onClose={() => setViewingImage(null)} />
-    </div>
-  );
+    </div>;
 };
