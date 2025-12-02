@@ -121,7 +121,7 @@ const Home = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4 pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-border flex items-center justify-around px-4 pb-safe py-px">
         <Button variant="ghost" size="sm" onClick={() => navigate("/feed")}>
           <HomeIcon className="w-5 h-5" />
         </Button>
