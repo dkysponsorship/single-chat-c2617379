@@ -318,16 +318,16 @@ export const ChatWindow = ({
       </div>
 
       {/* Messages Area - With top padding for fixed header */}
-      <ScrollArea className="flex-1 p-4" style={{
+      <ScrollArea className="flex-1 p-2 overflow-x-hidden" style={{
       paddingTop: 'calc(4rem + env(safe-area-inset-top))'
     }}>
-        <div className="space-y-4">
+        <div className="space-y-3 w-full overflow-hidden">
           {messages.map((message, index) => {
           const swipeState = swipeStates[message.id];
           const swipeOffset = swipeState ? swipeState.currentX - swipeState.startX : 0;
           const swipeProgress = Math.abs(swipeOffset) / 60; // 0 to 1 progress
 
-          return <div key={message.id} className={cn("flex gap-2 message-enter w-full relative", message.isOwn ? "justify-end" : "justify-start")} style={{
+          return <div key={message.id} className={cn("flex gap-1.5 message-enter relative overflow-hidden", message.isOwn ? "justify-end" : "justify-start")} style={{
             animationDelay: `${index * 50}ms`
           }}>
               {/* Reply icon that appears when swiping */}
@@ -338,7 +338,7 @@ export const ChatWindow = ({
                   <Reply className="w-5 h-5 text-primary" />
                 </div>}
 
-              <div className="flex gap-2 items-end w-full" style={{
+              <div className="flex gap-1.5 items-end max-w-full" style={{
               transform: `translateX(${swipeOffset}px)`,
               transition: swipeState?.isSwiping ? 'none' : 'transform 0.3s ease-out'
             }} onMouseDown={e => handleSwipeStart(message.id, e.clientX)} onMouseMove={e => swipeState?.isSwiping && handleSwipeMove(message.id, e.clientX)} onMouseUp={() => handleSwipeEnd(message.id, message)} onMouseLeave={() => handleSwipeEnd(message.id, message)} onTouchStart={e => handleSwipeStart(message.id, e.touches[0].clientX)} onTouchMove={e => swipeState?.isSwiping && handleSwipeMove(message.id, e.touches[0].clientX)} onTouchEnd={() => handleSwipeEnd(message.id, message)}>
@@ -397,7 +397,7 @@ export const ChatWindow = ({
               // Regular messages with context menu
               <ContextMenu>
                   <ContextMenuTrigger>
-                    <div className={cn("max-w-[80%] rounded-xl px-2.5 py-1 smooth-transition cursor-pointer flex flex-col break-words", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")}>
+                    <div className={cn("rounded-xl px-2.5 py-1 smooth-transition cursor-pointer flex flex-col overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)', wordBreak: 'break-word' }}>
                       {message.repliedMessage && <div className={cn("text-xs p-2 rounded border-l-2 mb-1", message.isOwn ? "bg-white/10 border-white/30 text-white/70" : "bg-muted/50 border-primary/30 text-muted-foreground")}>
                           <div className="flex items-center gap-1 mb-1">
                             <Reply className="w-3 h-3" />
