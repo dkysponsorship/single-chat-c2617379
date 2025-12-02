@@ -253,7 +253,7 @@ export const ChatWindow = ({
       {/* Chat Header - Fixed */}
       <div className="fixed top-0 left-0 right-0 z-10 flex items-center justify-between p-4 pt-safe border-b border-border bg-card">
         <div className="flex items-center gap-2">
-          {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
+          {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-6 w-4 p-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>}
           <div className="relative">
