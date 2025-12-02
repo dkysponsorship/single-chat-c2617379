@@ -352,18 +352,18 @@ export const ChatWindow = ({
               {message.audioUrl ?
               // Voice message with click to play and long press for options
               <>
-                  <div className={cn("max-w-[70%] rounded-3xl px-4 py-3 smooth-transition cursor-pointer flex items-center gap-3", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} onClick={() => handleAudioClick(message.id, message.audioUrl!)} onMouseDown={() => handleLongPressStart(message.id)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd} onTouchStart={() => handleLongPressStart(message.id)} onTouchEnd={handleLongPressEnd}>
-                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
-                      {playingAudioId === message.id ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  <div className={cn("rounded-xl px-2.5 py-1.5 smooth-transition cursor-pointer flex items-center gap-2 overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)' }} onClick={() => handleAudioClick(message.id, message.audioUrl!)} onMouseDown={() => handleLongPressStart(message.id)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd} onTouchStart={() => handleLongPressStart(message.id)} onTouchEnd={handleLongPressEnd}>
+                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
+                      {playingAudioId === message.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </div>
-                    <div className="flex-1">
-                      <div className={cn("h-8 flex items-center gap-1", message.isOwn ? "text-white/70" : "text-primary/70")}>
-                        {[...Array(20)].map((_, i) => <div key={i} className={cn("w-1 rounded-full", message.isOwn ? "bg-white/50" : "bg-primary/50")} style={{
+                    <div className="flex-1 min-w-0">
+                      <div className={cn("h-6 flex items-center gap-0.5", message.isOwn ? "text-white/70" : "text-primary/70")}>
+                        {[...Array(15)].map((_, i) => <div key={i} className={cn("w-0.5 rounded-full", message.isOwn ? "bg-white/50" : "bg-primary/50")} style={{
                         height: `${Math.random() * 100}%`,
                         minHeight: '20%'
                       }} />)}
                       </div>
-                      <p className={cn("text-xs mt-1 opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
+                      <p className={cn("text-xs opacity-70", message.isOwn ? "text-white/70" : "text-muted-foreground")}>
                         {formatTime(message.timestamp)}
                       </p>
                     </div>
