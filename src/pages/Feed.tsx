@@ -66,7 +66,7 @@ const Feed = () => {
   return <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="sticky top-0 z-10 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur pt-safe py-[2px]">
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="font-bold font-serif text-3xl text-red-500">
           Feed
         </h1>
         

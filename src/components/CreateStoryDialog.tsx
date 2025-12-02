@@ -68,7 +68,7 @@ export const CreateStoryDialog = ({
   };
   return <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2 bg-sky-800 hover:bg-sky-700 text-base">
+        <Button size="sm" className="gap-2 bg-sky-800 hover:bg-sky-700 text-base px-[7px]">
           <Plus className="w-4 h-4" />
           Story
         </Button>

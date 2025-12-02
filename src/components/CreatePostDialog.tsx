@@ -23,7 +23,9 @@ export const CreatePostDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -35,7 +37,6 @@ export const CreatePostDialog = ({
         });
         return;
       }
-      
       const reader = new FileReader();
       reader.onloadend = () => {
         setOriginalImageSrc(reader.result as string);
@@ -44,23 +45,22 @@ export const CreatePostDialog = ({
       reader.readAsDataURL(file);
     }
   };
-
   const handleCropComplete = (croppedBlob: Blob) => {
     // Convert blob to file
-    const croppedFile = new File([croppedBlob], "cropped-image.jpg", { type: "image/jpeg" });
+    const croppedFile = new File([croppedBlob], "cropped-image.jpg", {
+      type: "image/jpeg"
+    });
     setImageFile(croppedFile);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
     };
     reader.readAsDataURL(croppedBlob);
-    
     setShowCropper(false);
     setOriginalImageSrc(null);
   };
-
   const handleCropCancel = () => {
     setShowCropper(false);
     setOriginalImageSrc(null);
@@ -95,9 +95,9 @@ export const CreatePostDialog = ({
   };
   return <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-sky-800 hover:bg-sky-700">
+        <Button className="gap-2 bg-sky-800 hover:bg-sky-700 opacity-90 shadow-none border-2 rounded-sm px-[9px]">
           <PlusCircle className="w-4 h-4" />
-          Create Post
+           Post
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
@@ -138,13 +138,6 @@ export const CreatePostDialog = ({
       </DialogContent>
 
       {/* Image Cropper */}
-      {originalImageSrc && (
-        <PostImageCropper
-          imageSrc={originalImageSrc}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
-          isOpen={showCropper}
-        />
-      )}
+      {originalImageSrc && <PostImageCropper imageSrc={originalImageSrc} onCropComplete={handleCropComplete} onCancel={handleCropCancel} isOpen={showCropper} />}
     </Dialog>;
 };
