@@ -155,7 +155,27 @@ const Chat = () => {
     // Regular chat
     const chatId = createChatId(currentUser.id, friendId);
     
-    // Insert message with reply_to if provided
+    // Optimistic UI update - add message immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = {
+      id: tempId,
+      chat_id: chatId,
+      sender_id: currentUser.id,
+      content: messageText.trim(),
+      created_at: new Date().toISOString(),
+      reply_to: replyToId || null,
+      read_at: null,
+      is_edited: false,
+      sender_profile: {
+        username: currentUser.username,
+        display_name: currentUser.displayName,
+        avatar_url: currentUser.avatar
+      }
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    
+    // Insert message in background
     try {
       const { error } = await supabase
         .from('messages')
@@ -169,6 +189,8 @@ const Chat = () => {
       if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       toast({
         title: "Failed to send message",
         description: "Please try again.",
