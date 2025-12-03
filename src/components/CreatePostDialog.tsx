@@ -110,7 +110,7 @@ export const CreatePostDialog = ({
             <Textarea id="caption" placeholder="What's on your mind?" value={caption} onChange={e => setCaption(e.target.value)} className="min-h-[100px]" />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 py-px my-0">
             <Label htmlFor="image">Image</Label>
             <div className="flex items-center gap-2">
               <Input id="image" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
