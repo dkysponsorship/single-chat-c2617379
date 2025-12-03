@@ -8,7 +8,7 @@ import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
 import { UserProfile } from "@/components/UserProfile";
 import { getFriends } from "@/services/supabase";
-import { getCurrentUser } from "@/data/mockData";
+import { getCurrentUser } from "@/services/supabase";
 import { User } from "@/types/user";
 const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
@@ -16,10 +16,12 @@ const Home = () => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const navigate = useNavigate();
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      navigate("/");
-    } else {
+    const initPage = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        navigate("/");
+        return;
+      }
       setCurrentUser(user);
       // Load friends from Supabase
       const unsubscribe = getFriends(user.id, userFriends => {
@@ -36,14 +38,15 @@ const Home = () => {
       return () => {
         if (unsubscribe) unsubscribe();
       };
-    }
+    };
+    initPage();
   }, [navigate]);
   const handleLogout = async () => {
     const {
       logoutUser
     } = await import("@/services/supabase");
     await logoutUser();
-    sessionStorage.removeItem("currentUser");
+    localStorage.removeItem("currentUser");
     navigate("/");
   };
   const handleSelectFriend = (friendId: string) => {
