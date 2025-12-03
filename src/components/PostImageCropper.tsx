@@ -118,108 +118,110 @@ export const PostImageCropper = ({ imageSrc, onCropComplete, onCancel, isOpen }:
 
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Crop Post Image</DialogTitle>
         </DialogHeader>
-        <div 
-          className="relative w-full h-[400px] bg-muted"
-          style={{
-            filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
-          }}
-        >
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={1}
-            cropShape="rect"
-            showGrid={true}
-            onCropChange={onCropChange}
-            onZoomChange={onZoomChange}
-            onCropComplete={onCropCompleteCallback}
-          />
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <div 
+            className="relative w-full h-[300px] sm:h-[400px] bg-muted"
+            style={{
+              filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
+            }}
+          >
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              cropShape="rect"
+              showGrid={true}
+              onCropChange={onCropChange}
+              onZoomChange={onZoomChange}
+              onCropComplete={onCropCompleteCallback}
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Filters</label>
+            <div className="flex gap-2 flex-wrap">
+              {Object.keys(filters).map((filterName) => (
+                <Button
+                  key={filterName}
+                  variant={selectedFilter === filterName ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => applyFilter(filterName)}
+                  className="capitalize"
+                >
+                  {filterName === "bw" ? "B&W" : filterName}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Adjustments */}
+          <div className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Zoom</label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Brightness: {brightness}%</label>
+              <input
+                type="range"
+                min={50}
+                max={150}
+                value={brightness}
+                onChange={(e) => {
+                  setBrightness(Number(e.target.value));
+                  setSelectedFilter("none");
+                }}
+                className="w-full"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Contrast: {contrast}%</label>
+              <input
+                type="range"
+                min={50}
+                max={150}
+                value={contrast}
+                onChange={(e) => {
+                  setContrast(Number(e.target.value));
+                  setSelectedFilter("none");
+                }}
+                className="w-full"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Saturation: {saturation}%</label>
+              <input
+                type="range"
+                min={0}
+                max={200}
+                value={saturation}
+                onChange={(e) => {
+                  setSaturation(Number(e.target.value));
+                  setSelectedFilter("none");
+                }}
+                className="w-full"
+              />
+            </div>
+          </div>
         </div>
-
-        {/* Filters */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Filters</label>
-          <div className="flex gap-2 flex-wrap">
-            {Object.keys(filters).map((filterName) => (
-              <Button
-                key={filterName}
-                variant={selectedFilter === filterName ? "default" : "outline"}
-                size="sm"
-                onClick={() => applyFilter(filterName)}
-                className="capitalize"
-              >
-                {filterName === "bw" ? "B&W" : filterName}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Adjustments */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Zoom</label>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.1}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Brightness: {brightness}%</label>
-            <input
-              type="range"
-              min={50}
-              max={150}
-              value={brightness}
-              onChange={(e) => {
-                setBrightness(Number(e.target.value));
-                setSelectedFilter("none");
-              }}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Contrast: {contrast}%</label>
-            <input
-              type="range"
-              min={50}
-              max={150}
-              value={contrast}
-              onChange={(e) => {
-                setContrast(Number(e.target.value));
-                setSelectedFilter("none");
-              }}
-              className="w-full"
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Saturation: {saturation}%</label>
-            <input
-              type="range"
-              min={0}
-              max={200}
-              value={saturation}
-              onChange={(e) => {
-                setSaturation(Number(e.target.value));
-                setSelectedFilter("none");
-              }}
-              className="w-full"
-            />
-          </div>
-        </div>
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
