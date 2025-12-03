@@ -70,7 +70,7 @@ const Profile = () => {
   if (!currentUser || !profileUser) return null;
   return <div className="min-h-screen bg-background pb-20">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-10 h-14 items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur pt-safe py-[2px] flex flex-row">
+      <div className="sticky top-0 z-10 h-14 items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur pt-safe flex flex-row py-0">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
