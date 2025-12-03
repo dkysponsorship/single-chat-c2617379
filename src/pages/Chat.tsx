@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
 import { ChatWindow, Message } from "@/components/ChatWindow";
-import { getCurrentUser } from "@/data/mockData";
 import { 
+  getCurrentUser,
   sendMessage, 
   getMessages, 
   createChatId, 
@@ -30,57 +30,60 @@ const Chat = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const user = getCurrentUser();
-    if (!user) {
-      navigate("/");
-      return;
-    }
-    
-    setCurrentUser(user);
-    
-    if (friendId) {
-      // Check if this is AI chat
-      if (friendId === AI_FRIEND_ID) {
-        setFriend({
-          id: AI_FRIEND_ID,
-          username: 'ai_assistant',
-          displayName: 'AI Assistant',
-          email: '',
-          isOnline: true,
-          bio: 'I am your friendly AI assistant, always here to chat! 🤖',
-          avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AIAssistant',
-          createdAt: new Date().toISOString()
-        });
-        // Load AI chat messages
-        const chatId = createChatId(user.id, AI_FRIEND_ID);
+    const initChat = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        navigate("/");
+        return;
+      }
+      
+      setCurrentUser(user);
+      
+      if (friendId) {
+        // Check if this is AI chat
+        if (friendId === AI_FRIEND_ID) {
+          setFriend({
+            id: AI_FRIEND_ID,
+            username: 'ai_assistant',
+            displayName: 'AI Assistant',
+            email: '',
+            isOnline: true,
+            bio: 'I am your friendly AI assistant, always here to chat! 🤖',
+            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AIAssistant',
+            createdAt: new Date().toISOString()
+          });
+          // Load AI chat messages
+          const chatId = createChatId(user.id, AI_FRIEND_ID);
+          const unsubscribe = getMessages(chatId, (newMessages) => {
+            setMessages(newMessages);
+          });
+          
+          return () => {
+            if (unsubscribe) unsubscribe();
+          };
+        }
+        
+        // Fetch friend profile from Supabase
+        const fetchFriend = async () => {
+          const friendProfile = await getUserProfile(friendId);
+          if (friendProfile) {
+            setFriend(friendProfile);
+          }
+        };
+        fetchFriend();
+        
+        // Setup real-time message listening
+        const chatId = createChatId(user.id, friendId);
         const unsubscribe = getMessages(chatId, (newMessages) => {
           setMessages(newMessages);
         });
-        
+      
         return () => {
           if (unsubscribe) unsubscribe();
         };
       }
-      
-      // Fetch friend profile from Supabase
-      const fetchFriend = async () => {
-        const friendProfile = await getUserProfile(friendId);
-        if (friendProfile) {
-          setFriend(friendProfile);
-        }
-      };
-      fetchFriend();
-      
-      // Setup real-time message listening
-      const chatId = createChatId(user.id, friendId);
-      const unsubscribe = getMessages(chatId, (newMessages) => {
-        setMessages(newMessages);
-      });
-      
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
-    }
+    };
+    initChat();
   }, [friendId, navigate]);
 
   // Mark messages as read when chat is opened
