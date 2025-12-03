@@ -74,7 +74,7 @@ const Profile = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-lg font-bold text-foreground px-0 py-0 pt-[9px] pb-[20px]">@{profileUser.username}</h1>
+        <h1 className="text-lg font-bold text-foreground px-0 pt-[9px] pb-[20px] py-0">@{profileUser.username}</h1>
         <div className="w-9" />
       </div>
 
