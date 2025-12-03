@@ -490,15 +490,24 @@ export const getMessages = (chatId: string, callback: (messages: any[]) => void)
 
   fetchMessages();
 
+  // Use unique channel name for each chat
   const subscription = supabase
-    .channel('messages')
+    .channel(`messages-${chatId}`)
     .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+      () => fetchMessages()
+    )
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+      () => fetchMessages()
+    )
+    .on('postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
       () => fetchMessages()
     )
     .subscribe();
 
-  return () => subscription.unsubscribe();
+  return () => supabase.removeChannel(subscription);
 };
 
 export const createChatId = (userId1: string, userId2: string): string => {
