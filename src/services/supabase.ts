@@ -476,7 +476,7 @@ export const sendMessageToAI = async (chatId: string, userId: string, message: s
 
 export const getMessages = (chatId: string, callback: (messages: any[]) => void) => {
   const fetchMessages = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('messages')
       .select(`
         *,
@@ -485,29 +485,50 @@ export const getMessages = (chatId: string, callback: (messages: any[]) => void)
       .eq('chat_id', chatId)
       .order('created_at', { ascending: true });
 
+    if (error) {
+      console.error('Error fetching messages:', error);
+      return;
+    }
     if (data) callback(data);
   };
 
   fetchMessages();
 
-  // Use unique channel name for each chat
+  // Use unique channel name for each chat with timestamp to ensure fresh subscription
+  const channelName = `messages-${chatId}-${Date.now()}`;
+  console.log('Creating realtime subscription for channel:', channelName);
+  
   const subscription = supabase
-    .channel(`messages-${chatId}`)
+    .channel(channelName)
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-      () => fetchMessages()
+      (payload) => {
+        console.log('Realtime INSERT received:', payload);
+        fetchMessages();
+      }
     )
     .on('postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-      () => fetchMessages()
+      (payload) => {
+        console.log('Realtime UPDATE received:', payload);
+        fetchMessages();
+      }
     )
     .on('postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-      () => fetchMessages()
+      (payload) => {
+        console.log('Realtime DELETE received:', payload);
+        fetchMessages();
+      }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Realtime subscription status:', status);
+    });
 
-  return () => supabase.removeChannel(subscription);
+  return () => {
+    console.log('Removing realtime channel:', channelName);
+    supabase.removeChannel(subscription);
+  };
 };
 
 export const createChatId = (userId1: string, userId2: string): string => {
