@@ -8,6 +8,26 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck } from "lucide-react";
+
+// Message status helper: single tick = sent, double tick = delivered, double blue tick = read
+const MessageStatus = ({ message }: { message: Message }) => {
+  if (!message.isOwn) return null;
+  
+  const isTempMessage = message.id.startsWith('temp-');
+  
+  if (isTempMessage) {
+    // Single tick - message sent but not confirmed
+    return <Check className="w-3.5 h-3.5 text-white/50" />;
+  }
+  
+  if (message.readAt) {
+    // Double blue tick - message read
+    return <CheckCheck className="w-3.5 h-3.5 text-blue-400" />;
+  }
+  
+  // Double grey tick - message delivered (exists in DB)
+  return <CheckCheck className="w-3.5 h-3.5 text-white/50" />;
+};
 import { cn } from "@/lib/utils";
 import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -366,9 +386,7 @@ export const ChatWindow = ({
                       </div>
                       <p className={cn("text-xs opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
                         {formatTime(message.timestamp)}
-                        {message.isOwn && (
-                          <CheckCheck className={cn("w-3.5 h-3.5", message.readAt ? "text-yellow-400" : "text-white/50")} />
-                        )}
+                        <MessageStatus message={message} />
                       </p>
                     </div>
                   </div>
@@ -431,9 +449,7 @@ export const ChatWindow = ({
                             </>}
                           <p className={cn("text-xs mt-0.5 opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
                             {formatTime(message.timestamp)}
-                            {message.isOwn && (
-                              <CheckCheck className={cn("w-3.5 h-3.5", message.readAt ? "text-yellow-400" : "text-white/50")} />
-                            )}
+                            <MessageStatus message={message} />
                           </p>
                         </>}
                     </div>
