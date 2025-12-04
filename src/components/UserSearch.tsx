@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Search, UserPlus, Check } from "lucide-react";
-import { searchUsers, sendFriendRequest } from "@/services/supabase";
-import { getCurrentUser } from "@/data/mockData";
+import { searchUsers, sendFriendRequest, getCurrentUser } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,9 +13,16 @@ export const UserSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
 
-  const currentUser = getCurrentUser();
+  useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    };
+    loadUser();
+  }, []);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
