@@ -152,7 +152,7 @@ export const AuthScreen = ({ onLogin }: AuthScreenProps) => {
               </div>
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base font-semibold message-sent border-0"
+                className="w-full h-12 text-base font-semibold message-sent border-0 transition-all duration-150 active:scale-95 active:opacity-80"
               >
                 {isLogin ? "Sign In" : "Create Account"}
               </Button>
