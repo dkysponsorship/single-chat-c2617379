@@ -133,7 +133,7 @@ const Home = () => {
                         </p>
                       </div>
 
-                      {unreadCount > 0 && <div className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded-full font- animate-pulse">
+                      {unreadCount > 0 && <div className="text-destructive-foreground text-xs rounded-full font- animate-pulse bg-[#f50b0b] py-[2px] px-[4px]">
                           {unreadCount > 99 ? "99+" : unreadCount}
                         </div>}
                     </div>
