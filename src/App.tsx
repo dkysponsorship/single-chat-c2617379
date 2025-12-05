@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
@@ -20,15 +21,17 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/chat/:friendId" element={<Chat />} />
-            <Route path="/profile/:userId" element={<Profile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <NotificationProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/chat/:friendId" element={<Chat />} />
+              <Route path="/profile/:userId" element={<Profile />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </NotificationProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

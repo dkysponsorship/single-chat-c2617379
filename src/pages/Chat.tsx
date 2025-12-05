@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
+import { useNotificationContext } from "@/components/NotificationProvider";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -28,6 +29,7 @@ const Chat = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
+  const { markAsRead } = useNotificationContext();
 
   useEffect(() => {
     const initChat = async () => {
@@ -88,7 +90,7 @@ const Chat = () => {
 
   // Mark messages as read when chat is opened
   useEffect(() => {
-    const markMessagesAsRead = async () => {
+    const markMessagesAsReadHandler = async () => {
       if (!currentUser || !friendId || friendId === AI_FRIEND_ID) return;
       
       const chatId = createChatId(currentUser.id, friendId);
@@ -100,10 +102,13 @@ const Chat = () => {
         .eq('chat_id', chatId)
         .neq('sender_id', currentUser.id)
         .is('read_at', null);
+      
+      // Update notification context
+      markAsRead(chatId);
     };
     
-    markMessagesAsRead();
-  }, [messages, currentUser, friendId]);
+    markMessagesAsReadHandler();
+  }, [messages, currentUser, friendId, markAsRead]);
 
   const handleSendMessage = async (messageText: string, replyToId?: string) => {
     if (!currentUser || !friendId || !messageText.trim()) return;
