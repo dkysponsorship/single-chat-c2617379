@@ -370,10 +370,11 @@ export const ChatWindow = ({
                   </AvatarFallback>
                 </Avatar>}
               
-              {message.audioUrl ?
-              // Voice message with click to play and long press for options
-              <>
-                  <div className={cn("rounded-xl px-2.5 py-1.5 smooth-transition cursor-pointer flex items-center gap-2 overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)' }} onClick={() => handleAudioClick(message.id, message.audioUrl!)} onMouseDown={() => handleLongPressStart(message.id)} onMouseUp={handleLongPressEnd} onMouseLeave={handleLongPressEnd} onTouchStart={() => handleLongPressStart(message.id)} onTouchEnd={handleLongPressEnd}>
+            {message.audioUrl ?
+              // Voice message with context menu for options
+              <ContextMenu>
+                <ContextMenuTrigger>
+                  <div className={cn("rounded-xl px-2.5 py-1.5 smooth-transition cursor-pointer flex items-center gap-2 overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)' }} onClick={() => handleAudioClick(message.id, message.audioUrl!)}>
                     <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
                       {playingAudioId === message.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </div>
@@ -390,32 +391,22 @@ export const ChatWindow = ({
                       </p>
                     </div>
                   </div>
-                  {longPressMessageId === message.id && <DropdownMenu open={true} onOpenChange={open => !open && setLongPressMessageId(null)}>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => {
-                      startReplyingTo(message);
-                      setLongPressMessageId(null);
-                    }}>
-                          <Reply className="w-4 h-4 mr-2" />
-                          Reply
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                      onDeleteMessage(message.id, false);
-                      setLongPressMessageId(null);
-                    }} className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete for me
-                        </DropdownMenuItem>
-                        {message.isOwn && <DropdownMenuItem onClick={() => {
-                      onDeleteMessage(message.id, true);
-                      setLongPressMessageId(null);
-                    }} className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete for everyone
-                          </DropdownMenuItem>}
-                      </DropdownMenuContent>
-                    </DropdownMenu>}
-                </> :
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onClick={() => startReplyingTo(message)}>
+                    <Reply className="w-4 h-4 mr-2" />
+                    Reply
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => onDeleteMessage(message.id, false)} className="text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete for me
+                  </ContextMenuItem>
+                  {message.isOwn && <ContextMenuItem onClick={() => onDeleteMessage(message.id, true)} className="text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete for everyone
+                  </ContextMenuItem>}
+                </ContextMenuContent>
+              </ContextMenu> :
               // Regular messages with context menu
               <ContextMenu>
                   <ContextMenuTrigger>
