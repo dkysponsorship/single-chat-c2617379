@@ -71,9 +71,7 @@ const Home = () => {
         <div className="flex items-center gap-3">
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary relative">
             <MessageCircle className="w-4 h-4 text-primary-foreground" />
-            {totalUnread > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                {totalUnread > 9 ? '9+' : totalUnread}
-              </span>}
+            {totalUnread > 0}
           </div>
           <h1 className="text-2xl font-bold text-foreground">Messages</h1>
         </div>
