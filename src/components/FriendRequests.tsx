@@ -79,7 +79,7 @@ export const FriendRequests = () => {
         <CardTitle className="flex items-center gap-2">
           <Users className="w-5 h-5" />
           Friend Requests
-          {receivedRequests.length + sentRequests.length > 0 && <Badge variant="destructive" className="ml-auto">
+          {receivedRequests.length + sentRequests.length > 0 && <Badge variant="destructive" className="ml-auto bg-[#f50909]">
               {receivedRequests.length + sentRequests.length}
             </Badge>}
         </CardTitle>
