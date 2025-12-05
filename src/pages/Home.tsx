@@ -152,7 +152,7 @@ const Home = () => {
         </Button>
         <Button variant="ghost" size="sm" onClick={() => navigate("/home")} className="relative">
           <MessageCircle className="w-5 h-5" />
-          {totalUnread > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+          {totalUnread > 0 && <span className="absolute -top-1 -right-1 text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold bg-[#f80b0b]">
               {totalUnread > 9 ? '9+' : totalUnread}
             </span>}
         </Button>
