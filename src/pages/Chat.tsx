@@ -88,26 +88,21 @@ const Chat = () => {
     initChat();
   }, [friendId, navigate]);
 
-  // Mark messages as read when chat is opened
+  // Mark messages as read when chat is opened or new messages arrive
   useEffect(() => {
-    const markMessagesAsReadHandler = async () => {
-      if (!currentUser || !friendId || friendId === AI_FRIEND_ID) return;
-      
-      const chatId = createChatId(currentUser.id, friendId);
-      
-      // Mark all unread messages from friend as read
-      await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('chat_id', chatId)
-        .neq('sender_id', currentUser.id)
-        .is('read_at', null);
-      
-      // Update notification context
-      markAsRead(chatId);
-    };
+    if (!currentUser || !friendId || friendId === AI_FRIEND_ID) return;
     
-    markMessagesAsReadHandler();
+    const chatId = createChatId(currentUser.id, friendId);
+    
+    // Check if there are unread messages from friend
+    const hasUnreadFromFriend = messages.some(
+      msg => msg.sender_id !== currentUser.id && !msg.read_at
+    );
+    
+    if (hasUnreadFromFriend) {
+      // Update notification context - this will also mark in DB
+      markAsRead(chatId);
+    }
   }, [messages, currentUser, friendId, markAsRead]);
 
   const handleSendMessage = async (messageText: string, replyToId?: string) => {
