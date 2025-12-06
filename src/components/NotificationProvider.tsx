@@ -47,8 +47,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const user = await getCurrentUser();
       if (user) {
         setUserId(user.id);
-        // Request notification permission when user logs in
-        notifications.requestPermission();
       }
     };
     initUser();
