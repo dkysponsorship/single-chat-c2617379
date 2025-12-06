@@ -85,26 +85,13 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
         }
       }
 
-      // Add AI assistant unread count
-      const aiChatId = [userId, 'ai-assistant'].sort().join('_');
-      const { count: aiCount } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('chat_id', aiChatId)
-        .neq('sender_id', userId)
-        .is('read_at', null);
-
-      if (aiCount && aiCount > 0) {
-        counts['ai-assistant'] = aiCount;
-      }
-
       setUnreadCounts(counts);
     } catch (error) {
       console.error('Error fetching unread counts:', error);
     }
   }, [userId]);
 
-  // Subscribe to new messages
+  // Subscribe to new messages and updates
   useEffect(() => {
     if (!userId) return;
 
@@ -126,7 +113,10 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
           if (newMessage.sender_id === userId) return;
 
           // Don't notify if currently viewing this chat
-          if (currentChatId && chatId === currentChatId) return;
+          if (currentChatId && chatId === currentChatId) {
+            // Still mark it as read immediately
+            return;
+          }
 
           // Get sender info
           const { data: senderProfile } = await supabase
@@ -160,6 +150,17 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
           fetchUnreadCounts();
         }
       )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        async (payload) => {
+          const updatedMessage = payload.new as any;
+          
+          // If a message was marked as read, refresh unread counts
+          if (updatedMessage.read_at && updatedMessage.chat_id.includes(userId)) {
+            fetchUnreadCounts();
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -172,15 +173,20 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
     if (!userId) return;
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('chat_id', chatId)
         .neq('sender_id', userId)
         .is('read_at', null);
 
-      // Update local state
-      const friendId = chatId.split('_').find(id => id !== userId);
+      if (error) {
+        console.error('Error marking messages as read:', error);
+        return;
+      }
+
+      // Update local state immediately
+      const friendId = chatId.split('_').find(id => id !== userId && id !== 'ai-assistant');
       if (friendId) {
         setUnreadCounts(prev => {
           const newCounts = { ...prev };
