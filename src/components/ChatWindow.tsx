@@ -60,6 +60,7 @@ interface ChatWindowProps {
   onBack?: () => void;
   onLogout?: () => void;
   currentUserName?: string;
+  onInputChange?: () => void;
 }
 export const ChatWindow = ({
   friend,
@@ -74,7 +75,8 @@ export const ChatWindow = ({
   onSendImage,
   onBack,
   onLogout,
-  currentUserName
+  currentUserName,
+  onInputChange
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -528,7 +530,10 @@ export const ChatWindow = ({
           {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
               <ImageIcon className="w-4 h-4" />
             </Button>}
-          <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder={`Message ${friend.name}...`} className="flex-1 h-10 bg-background border-border focus:ring-primary" />
+          <Input value={newMessage} onChange={e => {
+            setNewMessage(e.target.value);
+            onInputChange?.();
+          }} placeholder={`Message ${friend.name}...`} className="flex-1 h-10 bg-background border-border focus:ring-primary" />
           <VoiceRecorder onSendVoice={handleSendVoice} />
           <Button type="submit" size="sm" className="message-sent border-0 h-10 px-4" disabled={!newMessage.trim()}>
             <Send className="w-4 h-4" />
