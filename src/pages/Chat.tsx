@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationContext } from "@/components/NotificationProvider";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -27,9 +28,12 @@ const Chat = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [friend, setFriend] = useState<User | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isAITyping, setIsAITyping] = useState(false);
   const { toast } = useToast();
   const { markAsRead } = useNotificationContext();
+  
+  const chatId = currentUser && friendId ? createChatId(currentUser.id, friendId) : '';
+  const { friendTyping, handleInputChange, stopTyping } = useTypingIndicator(chatId, currentUser?.id || null);
 
   useEffect(() => {
     const initChat = async () => {
@@ -119,8 +123,8 @@ const Chat = () => {
       };
       setMessages(prev => [...prev, userMessage]);
       
-      // Show typing indicator
-      setIsTyping(true);
+      // Show typing indicator for AI
+      setIsAITyping(true);
       
       // Build conversation history
       const conversationHistory = messages.map(msg => ({
@@ -131,7 +135,7 @@ const Chat = () => {
       
       // Get AI response
       const aiResponse = await sendAIMessage(currentUser.id, messageText.trim(), conversationHistory);
-      setIsTyping(false);
+      setIsAITyping(false);
       
       if (aiResponse) {
         // Add AI message to UI
@@ -427,13 +431,17 @@ const Chat = () => {
           }}
           messages={formattedMessages}
           currentUser={currentUser.displayName}
-          onSendMessage={handleSendMessage}
+          onSendMessage={(msg, replyToId) => {
+            stopTyping();
+            handleSendMessage(msg, replyToId);
+          }}
           onDeleteChat={handleDeleteChat}
           onDeleteMessage={handleDeleteMessage}
           onEditMessage={handleEditMessage}
-          isTyping={isTyping}
+          isTyping={friendId === AI_FRIEND_ID ? isAITyping : friendTyping}
           onSendVoice={handleSendVoice}
           onSendImage={handleSendImage}
+          onInputChange={handleInputChange}
         />
       </div>
     </div>
