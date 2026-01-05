@@ -431,6 +431,7 @@ const Chat = () => {
           }}
           messages={formattedMessages}
           currentUser={currentUser.displayName}
+          chatId={chatId}
           onSendMessage={(msg, replyToId) => {
             stopTyping();
             handleSendMessage(msg, replyToId);
