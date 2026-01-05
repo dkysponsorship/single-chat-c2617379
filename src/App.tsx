@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
+import NotificationSettings from "./pages/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/home" element={<Home />} />
               <Route path="/chat/:friendId" element={<Chat />} />
               <Route path="/profile/:userId" element={<Profile />} />
+              <Route path="/notification-settings" element={<NotificationSettings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
