@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus } from "lucide-react";
+import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
+import { useMessageReactions } from "@/hooks/useMessageReactions";
 
 // Message status helper: single tick = sent, double tick = delivered, double blue tick = read
 const MessageStatus = ({ message }: { message: Message }) => {
@@ -50,6 +52,7 @@ interface ChatWindowProps {
   friend: Friend;
   messages: Message[];
   currentUser: string;
+  chatId: string;
   onSendMessage: (message: string, replyToId?: string) => void;
   onDeleteChat: () => void;
   onDeleteMessage: (messageId: string, deleteForEveryone?: boolean) => void;
@@ -66,6 +69,7 @@ export const ChatWindow = ({
   friend,
   messages,
   currentUser,
+  chatId,
   onSendMessage,
   onDeleteChat,
   onDeleteMessage,
@@ -101,9 +105,12 @@ export const ChatWindow = ({
     [key: string]: HTMLAudioElement;
   }>({});
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
+  // Get current user ID from friend's perspective in chatId
+  const currentUserId = chatId.split('_').find(id => id !== friend.id) || '';
+  const { toggleReaction, getGroupedReactions } = useMessageReactions(chatId, currentUserId);
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth"
@@ -376,25 +383,46 @@ export const ChatWindow = ({
               // Voice message with context menu for options
               <ContextMenu>
                 <ContextMenuTrigger>
-                  <div className={cn("rounded-xl px-2.5 py-1.5 smooth-transition cursor-pointer flex items-center gap-2 overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)' }} onClick={() => handleAudioClick(message.id, message.audioUrl!)}>
-                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
-                      {playingAudioId === message.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={cn("h-6 flex items-center gap-0.5", message.isOwn ? "text-white/70" : "text-primary/70")}>
-                        {[...Array(15)].map((_, i) => <div key={i} className={cn("w-0.5 rounded-full", message.isOwn ? "bg-white/50" : "bg-primary/50")} style={{
-                        height: `${Math.random() * 100}%`,
-                        minHeight: '20%'
-                      }} />)}
+                  <div className="flex flex-col">
+                    <div className={cn("rounded-xl px-2.5 py-1.5 smooth-transition cursor-pointer flex items-center gap-2 overflow-hidden", message.isOwn ? "message-sent text-white" : "bg-chat-received text-chat-received-foreground")} style={{ maxWidth: 'calc(100vw - 80px)' }} onClick={() => handleAudioClick(message.id, message.audioUrl!)}>
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0", message.isOwn ? "bg-white/20" : "bg-primary/20")}>
+                        {playingAudioId === message.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                       </div>
-                      <p className={cn("text-xs opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
-                        {formatTime(message.timestamp)}
-                        <MessageStatus message={message} />
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className={cn("h-6 flex items-center gap-0.5", message.isOwn ? "text-white/70" : "text-primary/70")}>
+                          {[...Array(15)].map((_, i) => <div key={i} className={cn("w-0.5 rounded-full", message.isOwn ? "bg-white/50" : "bg-primary/50")} style={{
+                          height: `${Math.random() * 100}%`,
+                          minHeight: '20%'
+                        }} />)}
+                        </div>
+                        <p className={cn("text-xs opacity-70 flex items-center gap-1", message.isOwn ? "text-white/70 justify-end" : "text-muted-foreground")}>
+                          {formatTime(message.timestamp)}
+                          <MessageStatus message={message} />
+                        </p>
+                      </div>
                     </div>
+                    {/* Reactions display for voice messages */}
+                    {getGroupedReactions(message.id).length > 0 && (
+                      <div className="mt-1">
+                        <MessageReactions
+                          reactions={getGroupedReactions(message.id)}
+                          onReact={(emoji) => toggleReaction(message.id, emoji)}
+                          isOwn={message.isOwn}
+                        />
+                      </div>
+                    )}
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
+                  <ContextMenuSub>
+                    <ContextMenuSubTrigger>
+                      <SmilePlus className="w-4 h-4 mr-2" />
+                      React
+                    </ContextMenuSubTrigger>
+                    <ContextMenuSubContent>
+                      <ReactionPicker onReact={(emoji) => toggleReaction(message.id, emoji)} />
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
                   <ContextMenuItem onClick={() => startReplyingTo(message)}>
                     <Reply className="w-4 h-4 mr-2" />
                     Reply
@@ -445,9 +473,28 @@ export const ChatWindow = ({
                             <MessageStatus message={message} />
                           </p>
                         </>}
+                      {/* Reactions display */}
+                      {getGroupedReactions(message.id).length > 0 && (
+                        <div className="mt-1">
+                          <MessageReactions
+                            reactions={getGroupedReactions(message.id)}
+                            onReact={(emoji) => toggleReaction(message.id, emoji)}
+                            isOwn={message.isOwn}
+                          />
+                        </div>
+                      )}
                     </div>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
+                    <ContextMenuSub>
+                      <ContextMenuSubTrigger>
+                        <SmilePlus className="w-4 h-4 mr-2" />
+                        React
+                      </ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        <ReactionPicker onReact={(emoji) => toggleReaction(message.id, emoji)} />
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
                     <ContextMenuItem onClick={() => startReplyingTo(message)}>
                       <Reply className="w-4 h-4 mr-2" />
                       Reply
