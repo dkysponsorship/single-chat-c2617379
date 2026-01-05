@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAIFriendSetup } from "./AIFriendSetup";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle, Home as HomeIcon, User as UserIcon, Bell, BellOff } from "lucide-react";
+import { LogOut, MessageCircle, Home as HomeIcon, User as UserIcon, Bell, BellOff, Settings } from "lucide-react";
 import { Friend } from "@/components/FriendList";
 import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
@@ -77,12 +77,15 @@ const Home = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {!permissionGranted && <Button variant="ghost" size="sm" onClick={handleEnableNotifications} title="Enable notifications">
-              <BellOff className="w-4 h-4" />
-            </Button>}
-          {permissionGranted && <Button variant="ghost" size="sm" className="text-primary" title="Notifications enabled">
-              <Bell className="w-4 h-4" />
-            </Button>}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/notification-settings')} 
+            title="Notification settings"
+            className={permissionGranted ? "text-primary" : ""}
+          >
+            {permissionGranted ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+          </Button>
           <UserSearch />
           <UserProfile />
           <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-destructive/10">

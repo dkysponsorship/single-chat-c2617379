@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getNotificationSettings } from '@/hooks/useNotificationSettings';
 
 interface UnreadCounts {
   [friendId: string]: number;
@@ -37,6 +38,9 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
 
   // Play notification sound
   const playSound = useCallback(() => {
+    const settings = getNotificationSettings();
+    if (!settings.soundEnabled) return;
+    
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(console.error);
@@ -45,6 +49,9 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
 
   // Show browser notification
   const showNotification = useCallback((title: string, body: string, icon?: string) => {
+    const settings = getNotificationSettings();
+    if (!settings.browserNotificationsEnabled) return;
+    
     if (permissionGranted && 'Notification' in window) {
       new Notification(title, {
         body,
@@ -141,10 +148,13 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
           );
 
           // Show toast notification
-          toast({
-            title: senderName,
-            description: messagePreview,
-          });
+          const settings = getNotificationSettings();
+          if (settings.toastNotificationsEnabled) {
+            toast({
+              title: senderName,
+              description: messagePreview,
+            });
+          }
 
           // Update unread counts
           fetchUnreadCounts();
