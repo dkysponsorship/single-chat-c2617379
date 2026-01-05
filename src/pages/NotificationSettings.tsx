@@ -25,7 +25,7 @@ const NotificationSettings = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="h-14 flex items-center gap-3 px-4 border-b border-border bg-card pt-safe">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/home')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-xl font-bold text-foreground">Notification Settings</h1>
