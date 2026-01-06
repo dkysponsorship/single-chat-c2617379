@@ -11,6 +11,8 @@ import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useNotificationContext } from "@/components/NotificationProvider";
+import { formatDistanceToNow } from "date-fns";
+import { usePresence } from "@/hooks/usePresence";
 const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -22,6 +24,9 @@ const Home = () => {
     requestPermission,
     permissionGranted
   } = useNotificationContext();
+  
+  // Track user presence (online/offline status)
+  usePresence(currentUser?.id || null);
   useEffect(() => {
     const initPage = async () => {
       const user = await getCurrentUser();
@@ -37,6 +42,7 @@ const Home = () => {
           name: friend.displayName,
           avatar: friend.avatar,
           isOnline: friend.isOnline,
+          lastSeen: friend.lastSeen,
           lastMessage: "Start a conversation!",
           unreadCount: unreadCounts[friend.id] || 0
         }));
@@ -130,7 +136,11 @@ const Home = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm">{friend.name}</h3>
                         <p className="text-xs text-muted-foreground">
-                          {friend.isOnline ? "Online" : "Offline"}
+                          {friend.isOnline 
+                            ? "Online" 
+                            : friend.lastSeen 
+                              ? `Last seen ${formatDistanceToNow(friend.lastSeen, { addSuffix: true })}`
+                              : "Offline"}
                         </p>
                       </div>
 

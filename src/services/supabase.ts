@@ -371,8 +371,8 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
       .from('friendships')
       .select(`
         *,
-        user1_profile:profiles!friendships_user1_id_fkey(id, username, display_name, avatar_url, is_online, bio, created_at),
-        user2_profile:profiles!friendships_user2_id_fkey(id, username, display_name, avatar_url, is_online, bio, created_at)
+        user1_profile:profiles!friendships_user1_id_fkey(id, username, display_name, avatar_url, is_online, last_seen, bio, created_at),
+        user2_profile:profiles!friendships_user2_id_fkey(id, username, display_name, avatar_url, is_online, last_seen, bio, created_at)
       `)
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
@@ -396,6 +396,7 @@ export const getFriends = (userId: string, callback: (friends: User[]) => void) 
             displayName: friendProfile.display_name,
             email: '',
             isOnline: friendProfile.is_online || false,
+            lastSeen: friendProfile.last_seen ? new Date(friendProfile.last_seen) : undefined,
             bio: friendProfile.bio || '',
             avatar: friendProfile.avatar_url,
             createdAt: friendProfile.created_at
