@@ -2,12 +2,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 export interface Friend {
   id: string;
   name: string;
   avatar: string;
   isOnline: boolean;
+  lastSeen?: Date;
   lastMessage?: string;
   unreadCount?: number;
 }
@@ -74,7 +76,11 @@ export const FriendList = ({
                 </div>
                 {friend.lastMessage && (
                   <p className="text-xs text-muted-foreground truncate">
-                    {friend.lastMessage}
+                    {friend.isOnline 
+                      ? friend.lastMessage 
+                      : friend.lastSeen 
+                        ? `Last seen ${formatDistanceToNow(friend.lastSeen, { addSuffix: true })}`
+                        : friend.lastMessage}
                   </p>
                 )}
               </div>
