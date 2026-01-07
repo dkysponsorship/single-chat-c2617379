@@ -316,10 +316,13 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          device_platform: string | null
           display_name: string
           id: string
           is_online: boolean | null
           last_seen: string | null
+          onesignal_player_id: string | null
+          push_enabled: boolean | null
           updated_at: string | null
           username: string
         }
@@ -327,10 +330,13 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          device_platform?: string | null
           display_name: string
           id: string
           is_online?: boolean | null
           last_seen?: string | null
+          onesignal_player_id?: string | null
+          push_enabled?: boolean | null
           updated_at?: string | null
           username: string
         }
@@ -338,10 +344,13 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          device_platform?: string | null
           display_name?: string
           id?: string
           is_online?: boolean | null
           last_seen?: string | null
+          onesignal_player_id?: string | null
+          push_enabled?: boolean | null
           updated_at?: string | null
           username?: string
         }
