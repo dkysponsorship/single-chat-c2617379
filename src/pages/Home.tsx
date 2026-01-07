@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/services/supabase";
 import { User } from "@/types/user";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { formatDistanceToNow } from "date-fns";
-import { usePresence } from "@/hooks/usePresence";
+
 const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -25,8 +25,6 @@ const Home = () => {
     permissionGranted
   } = useNotificationContext();
   
-  // Track user presence (online/offline status)
-  usePresence(currentUser?.id || null);
   useEffect(() => {
     const initPage = async () => {
       const user = await getCurrentUser();

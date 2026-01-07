@@ -21,6 +21,7 @@ import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { sendPushNotification } from "@/services/pushNotifications";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -191,6 +192,18 @@ const Chat = () => {
         });
 
       if (error) throw error;
+
+      // Send push notification to friend (sender-side trigger)
+      const messagePreview = messageText.trim().slice(0, 50);
+      sendPushNotification({
+        recipientUserId: friendId,
+        title: currentUser.displayName,
+        body: messagePreview,
+        data: {
+          chatId,
+          senderId: currentUser.id,
+        },
+      }).catch(err => console.error('Push notification error:', err));
     } catch (error) {
       console.error('Error sending message:', error);
       // Remove optimistic message on error
@@ -293,6 +306,17 @@ const Chat = () => {
 
       if (messageError) throw messageError;
 
+      // Send push notification for voice message
+      sendPushNotification({
+        recipientUserId: friendId,
+        title: currentUser.displayName,
+        body: '🎤 Voice message',
+        data: {
+          chatId,
+          senderId: currentUser.id,
+        },
+      }).catch(err => console.error('Push notification error:', err));
+
       toast({
         title: "Voice note sent",
         description: "Your voice message has been sent successfully.",
@@ -339,6 +363,17 @@ const Chat = () => {
         });
 
       if (messageError) throw messageError;
+
+      // Send push notification for image message
+      sendPushNotification({
+        recipientUserId: friendId,
+        title: currentUser.displayName,
+        body: caption ? caption.slice(0, 50) : '📷 Photo',
+        data: {
+          chatId,
+          senderId: currentUser.id,
+        },
+      }).catch(err => console.error('Push notification error:', err));
 
       toast({
         title: "Photo sent",
