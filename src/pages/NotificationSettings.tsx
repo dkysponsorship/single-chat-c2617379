@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare, Smartphone } from "lucide-react";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useNotificationContext } from "@/components/NotificationProvider";
+import { useOneSignalContext } from "@/components/OneSignalProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -16,9 +17,22 @@ const NotificationSettings = () => {
     toggleToastNotifications 
   } = useNotificationSettings();
   const { permissionGranted, requestPermission } = useNotificationContext();
+  const oneSignal = useOneSignalContext();
 
   const handleEnableBrowserPermission = async () => {
     await requestPermission();
+  };
+
+  const handleEnablePush = async () => {
+    if (oneSignal) {
+      await oneSignal.requestPermission();
+    }
+  };
+
+  const handleDisablePush = async () => {
+    if (oneSignal) {
+      await oneSignal.disablePush();
+    }
   };
 
   return (
@@ -33,6 +47,37 @@ const NotificationSettings = () => {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 space-y-6">
+        {/* Push Notifications Card */}
+        <Card className={oneSignal?.pushEnabled ? "border-green-500/20 bg-green-500/5" : "border-primary/20 bg-primary/5"}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-primary" />
+              Push Notifications
+            </CardTitle>
+            <CardDescription>
+              {oneSignal?.pushEnabled 
+                ? "Push notifications are enabled. You'll receive notifications even when the app is closed."
+                : "Enable push notifications to receive alerts when the app is closed or in background."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {oneSignal?.pushEnabled ? (
+              <Button variant="outline" size="sm" onClick={handleDisablePush}>
+                Disable Push Notifications
+              </Button>
+            ) : (
+              <Button onClick={handleEnablePush} size="sm">
+                Enable Push Notifications
+              </Button>
+            )}
+            {oneSignal?.playerId && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Device registered ✓
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Browser Permission Card */}
         {!permissionGranted && (
           <Card className="border-primary/20 bg-primary/5">

@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getNotificationSettings } from '@/hooks/useNotificationSettings';
-import { sendPushNotification } from '@/services/pushNotifications';
 
 interface UnreadCounts {
   [friendId: string]: number;
@@ -156,17 +155,6 @@ export const useNotifications = (userId: string | null, currentChatId?: string) 
               description: messagePreview,
             });
           }
-
-          // Send push notification to recipient
-          sendPushNotification({
-            recipientUserId: userId,
-            title: senderName,
-            body: messagePreview,
-            data: {
-              chatId,
-              senderId: newMessage.sender_id,
-            },
-          });
 
           // Update unread counts
           fetchUnreadCounts();
