@@ -1,12 +1,23 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { isNativePlatform, getPlatform } from '@/lib/capacitor';
+import { 
+  initOneSignalNative, 
+  getPlayerId as getNativePlayerId, 
+  isSubscribed as isNativeSubscribed,
+  optIn as nativeOptIn,
+  optOut as nativeOptOut
+} from '@/lib/onesignal-native';
 
 interface OneSignalContextType {
   isInitialized: boolean;
   playerId: string | null;
   pushEnabled: boolean;
+  isNative: boolean;
   requestPermission: () => Promise<boolean>;
   disablePush: () => Promise<void>;
+  sendTestPush: () => Promise<boolean>;
 }
 
 const OneSignalContext = createContext<OneSignalContextType | null>(null);
@@ -32,6 +43,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   const [isInitialized, setIsInitialized] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const isNative = isNativePlatform();
 
   // Get user ID on mount
   useEffect(() => {
@@ -56,7 +68,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     return () => subscription.unsubscribe();
   }, []);
 
-  // Initialize OneSignal
+  // Initialize OneSignal (Web or Native)
   useEffect(() => {
     if (!userId) return;
 
@@ -66,6 +78,76 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
       return;
     }
 
+    // Native platform (Android/iOS via Capacitor)
+    if (isNative) {
+      initNativeOneSignal(appId, userId);
+      return;
+    }
+
+    // Web platform
+    initWebOneSignal(appId, userId);
+  }, [userId, isNative]);
+
+  const initNativeOneSignal = async (appId: string, uid: string) => {
+    // Wait for device ready
+    const waitForPlugin = () => new Promise<boolean>((resolve) => {
+      let attempts = 0;
+      const check = () => {
+        if (window.plugins?.OneSignal) {
+          resolve(true);
+        } else if (attempts < 20) {
+          attempts++;
+          setTimeout(check, 250);
+        } else {
+          resolve(false);
+        }
+      };
+      check();
+    });
+
+    const pluginReady = await waitForPlugin();
+    if (!pluginReady) {
+      console.warn('OneSignal native plugin not found');
+      return;
+    }
+
+    const success = initOneSignalNative(appId, {
+      onSubscriptionChange: async (newPlayerId, isSubscribed) => {
+        setPlayerId(newPlayerId);
+        setPushEnabled(isSubscribed);
+        
+        if (newPlayerId && isSubscribed) {
+          await updatePlayerIdInDatabase(newPlayerId, uid);
+        } else {
+          await disablePushInDatabase(uid);
+        }
+      },
+      onNotificationOpened: (data) => {
+        // Navigate to chat when notification is tapped
+        if (data.senderId) {
+          window.location.href = `/chat/${data.senderId}`;
+        }
+      },
+    });
+
+    if (success) {
+      setIsInitialized(true);
+      
+      // Check current subscription state
+      const currentPlayerId = await getNativePlayerId();
+      const currentSubscribed = await isNativeSubscribed();
+      
+      if (currentPlayerId) {
+        setPlayerId(currentPlayerId);
+        setPushEnabled(currentSubscribed);
+        if (currentSubscribed) {
+          await updatePlayerIdInDatabase(currentPlayerId, uid);
+        }
+      }
+    }
+  };
+
+  const initWebOneSignal = (appId: string, uid: string) => {
     // Check if already loaded
     if (window.OneSignal) {
       setIsInitialized(true);
@@ -90,7 +172,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         });
 
         setIsInitialized(true);
-        console.log('OneSignal initialized successfully');
+        console.log('OneSignal Web initialized successfully');
 
         // Check if already subscribed
         const permission = await OneSignal.Notifications.permission;
@@ -99,7 +181,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         if (permission && subscriptionId) {
           setPlayerId(subscriptionId);
           setPushEnabled(true);
-          await updatePlayerIdInDatabase(subscriptionId, userId);
+          await updatePlayerIdInDatabase(subscriptionId, uid);
         }
 
         // Listen for subscription changes
@@ -111,17 +193,17 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
           setPushEnabled(optedIn);
           
           if (newPlayerId && optedIn) {
-            await updatePlayerIdInDatabase(newPlayerId, userId);
+            await updatePlayerIdInDatabase(newPlayerId, uid);
           } else {
-            await disablePushInDatabase(userId);
+            await disablePushInDatabase(uid);
           }
         });
 
       } catch (error) {
-        console.error('Error initializing OneSignal:', error);
+        console.error('Error initializing OneSignal Web:', error);
       }
     });
-  }, [userId]);
+  };
 
   const updatePlayerIdInDatabase = async (newPlayerId: string, uid: string) => {
     try {
@@ -168,12 +250,32 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   };
 
   const requestPermission = async (): Promise<boolean> => {
-    if (!isInitialized || !window.OneSignal || !userId) {
-      console.warn('OneSignal not initialized or user not logged in');
+    if (!userId) {
+      console.warn('User not logged in');
       return false;
     }
 
     try {
+      if (isNative) {
+        await nativeOptIn();
+        const newPlayerId = await getNativePlayerId();
+        const subscribed = await isNativeSubscribed();
+        
+        if (newPlayerId && subscribed) {
+          setPlayerId(newPlayerId);
+          setPushEnabled(true);
+          await updatePlayerIdInDatabase(newPlayerId, userId);
+          return true;
+        }
+        return false;
+      }
+
+      // Web
+      if (!window.OneSignal) {
+        console.warn('OneSignal Web SDK not loaded');
+        return false;
+      }
+
       await window.OneSignal.Notifications.requestPermission();
       const permission = await window.OneSignal.Notifications.permission;
       const subscriptionId = await window.OneSignal.User.PushSubscription.id;
@@ -193,10 +295,15 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   };
 
   const disablePush = async () => {
-    if (!window.OneSignal || !userId) return;
+    if (!userId) return;
 
     try {
-      await window.OneSignal.User.PushSubscription.optOut();
+      if (isNative) {
+        await nativeOptOut();
+      } else if (window.OneSignal) {
+        await window.OneSignal.User.PushSubscription.optOut();
+      }
+      
       setPushEnabled(false);
       await disablePushInDatabase(userId);
     } catch (error) {
@@ -204,13 +311,43 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     }
   };
 
+  const sendTestPush = async (): Promise<boolean> => {
+    if (!playerId || !userId) {
+      console.warn('No player ID or user ID for test push');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          playerId,
+          title: '🎉 Test Notification',
+          message: 'Push notifications are working!',
+          data: { test: true },
+        },
+      });
+
+      if (error) {
+        console.error('Test push failed:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error sending test push:', error);
+      return false;
+    }
+  };
+
   return (
     <OneSignalContext.Provider value={{ 
       isInitialized, 
       playerId, 
-      pushEnabled, 
+      pushEnabled,
+      isNative,
       requestPermission, 
-      disablePush 
+      disablePush,
+      sendTestPush,
     }}>
       {children}
     </OneSignalContext.Provider>
