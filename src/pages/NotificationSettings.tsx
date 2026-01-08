@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare, Smartphone } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare, Smartphone, Send, Loader2, CheckCircle } from "lucide-react";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { useOneSignalContext } from "@/components/OneSignalProvider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 const NotificationSettings = () => {
   const navigate = useNavigate();
+  const [testingPush, setTestingPush] = useState(false);
   const { 
     settings, 
     toggleSound, 
@@ -35,6 +38,20 @@ const NotificationSettings = () => {
     }
   };
 
+  const handleTestPush = async () => {
+    if (!oneSignal) return;
+    
+    setTestingPush(true);
+    const success = await oneSignal.sendTestPush();
+    setTestingPush(false);
+    
+    if (success) {
+      toast.success("Test notification sent! Check your notification tray.");
+    } else {
+      toast.error("Failed to send test notification");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -53,6 +70,11 @@ const NotificationSettings = () => {
             <CardTitle className="text-base flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
               Push Notifications
+              {oneSignal?.isNative && (
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  Native
+                </span>
+              )}
             </CardTitle>
             <CardDescription>
               {oneSignal?.pushEnabled 
@@ -60,19 +82,44 @@ const NotificationSettings = () => {
                 : "Enable push notifications to receive alerts when the app is closed or in background."}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {oneSignal?.pushEnabled ? (
-              <Button variant="outline" size="sm" onClick={handleDisablePush}>
-                Disable Push Notifications
-              </Button>
-            ) : (
-              <Button onClick={handleEnablePush} size="sm">
-                Enable Push Notifications
-              </Button>
-            )}
+          <CardContent className="space-y-3">
+            <div className="flex gap-2 flex-wrap">
+              {oneSignal?.pushEnabled ? (
+                <Button variant="outline" size="sm" onClick={handleDisablePush}>
+                  Disable Push Notifications
+                </Button>
+              ) : (
+                <Button onClick={handleEnablePush} size="sm">
+                  Enable Push Notifications
+                </Button>
+              )}
+              
+              {oneSignal?.pushEnabled && oneSignal?.playerId && (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={handleTestPush}
+                  disabled={testingPush}
+                >
+                  {testingPush ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-1" />
+                      Send Test
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            
             {oneSignal?.playerId && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Device registered ✓
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-green-500" />
+                Device registered
               </p>
             )}
           </CardContent>
