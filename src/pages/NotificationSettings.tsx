@@ -67,10 +67,15 @@ const NotificationSettings = () => {
         {/* Push Notifications Card */}
         <Card className={oneSignal?.pushEnabled ? "border-green-500/20 bg-green-500/5" : "border-primary/20 bg-primary/5"}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+<CardTitle className="text-base flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
               Push Notifications
-              {oneSignal?.isNative && (
+              {oneSignal?.platformType === 'median' && (
+                <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">
+                  Native App
+                </span>
+              )}
+              {oneSignal?.platformType === 'capacitor' && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   Native
                 </span>
