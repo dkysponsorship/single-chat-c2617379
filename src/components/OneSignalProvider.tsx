@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { isNativePlatform, getPlatform } from '@/lib/capacitor';
+import { isNativePlatform, isMedianPlatform, getPlatformType, PlatformType } from '@/lib/capacitor';
 import { 
   initOneSignalNative, 
   getPlayerId as getNativePlayerId, 
@@ -9,12 +8,23 @@ import {
   optIn as nativeOptIn,
   optOut as nativeOptOut
 } from '@/lib/onesignal-native';
+import {
+  isMedianApp,
+  getMedianOneSignalInfo,
+  registerMedianPush,
+  loginMedianOneSignal,
+  logoutMedianOneSignal,
+  getMedianPlayerId,
+  setupMedianSubscriptionListener,
+  MedianOneSignalInfo,
+} from '@/lib/onesignal-median';
 
 interface OneSignalContextType {
   isInitialized: boolean;
   playerId: string | null;
   pushEnabled: boolean;
   isNative: boolean;
+  platformType: PlatformType;
   requestPermission: () => Promise<boolean>;
   disablePush: () => Promise<void>;
   sendTestPush: () => Promise<boolean>;
@@ -31,6 +41,7 @@ declare global {
   interface Window {
     OneSignalDeferred?: Array<(oneSignal: any) => void>;
     OneSignal?: any;
+    median_onesignal_push_opened?: (data: any) => void;
   }
 }
 
@@ -44,6 +55,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(false);
   const isNative = isNativePlatform();
+  const platformType = getPlatformType();
 
   // Get user ID on mount
   useEffect(() => {
@@ -68,7 +80,24 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     return () => subscription.unsubscribe();
   }, []);
 
-  // Initialize OneSignal (Web or Native)
+  // Setup Median.co notification tap handler
+  useEffect(() => {
+    // Median.co calls this when user taps a notification
+    window.median_onesignal_push_opened = (data: any) => {
+      console.log('Median push notification opened:', data);
+      if (data?.senderId) {
+        window.location.href = `/chat/${data.senderId}`;
+      } else if (data?.additionalData?.senderId) {
+        window.location.href = `/chat/${data.additionalData.senderId}`;
+      }
+    };
+
+    return () => {
+      delete window.median_onesignal_push_opened;
+    };
+  }, []);
+
+  // Initialize OneSignal (Median > Capacitor > Web)
   useEffect(() => {
     if (!userId) return;
 
@@ -78,15 +107,66 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
       return;
     }
 
-    // Native platform (Android/iOS via Capacitor)
+    // Priority: Median.co > Capacitor Native > Web
+    if (isMedianApp()) {
+      console.log('Initializing OneSignal for Median.co platform');
+      initMedianOneSignal(userId);
+      return;
+    }
+
     if (isNative) {
+      console.log('Initializing OneSignal for Capacitor Native platform');
       initNativeOneSignal(appId, userId);
       return;
     }
 
-    // Web platform
+    console.log('Initializing OneSignal for Web platform');
     initWebOneSignal(appId, userId);
   }, [userId, isNative]);
+
+  const initMedianOneSignal = async (uid: string) => {
+    try {
+      // Login with user ID for targeting
+      await loginMedianOneSignal(uid);
+
+      // Get current subscription info
+      const info = await getMedianOneSignalInfo();
+      if (info) {
+        const currentPlayerId = getMedianPlayerId(info);
+        const isSubscribed = info.oneSignalSubscribed;
+
+        console.log('Median OneSignal info:', { playerId: currentPlayerId, subscribed: isSubscribed });
+
+        setPlayerId(currentPlayerId);
+        setPushEnabled(isSubscribed);
+
+        if (currentPlayerId && isSubscribed) {
+          await updatePlayerIdInDatabase(currentPlayerId, uid);
+        }
+      }
+
+      // Setup subscription change listener
+      setupMedianSubscriptionListener(async (newInfo: MedianOneSignalInfo) => {
+        const newPlayerId = getMedianPlayerId(newInfo);
+        const isSubscribed = newInfo.oneSignalSubscribed;
+
+        console.log('Median subscription changed:', { playerId: newPlayerId, subscribed: isSubscribed });
+
+        setPlayerId(newPlayerId);
+        setPushEnabled(isSubscribed);
+
+        if (newPlayerId && isSubscribed) {
+          await updatePlayerIdInDatabase(newPlayerId, uid);
+        } else {
+          await disablePushInDatabase(uid);
+        }
+      });
+
+      setIsInitialized(true);
+    } catch (error) {
+      console.error('Error initializing Median OneSignal:', error);
+    }
+  };
 
   const initNativeOneSignal = async (appId: string, uid: string) => {
     // Wait for device ready
@@ -123,7 +203,6 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         }
       },
       onNotificationOpened: (data) => {
-        // Navigate to chat when notification is tapped
         if (data.senderId) {
           window.location.href = `/chat/${data.senderId}`;
         }
@@ -133,7 +212,6 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     if (success) {
       setIsInitialized(true);
       
-      // Check current subscription state
       const currentPlayerId = await getNativePlayerId();
       const currentSubscribed = await isNativeSubscribed();
       
@@ -148,13 +226,11 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   };
 
   const initWebOneSignal = (appId: string, uid: string) => {
-    // Check if already loaded
     if (window.OneSignal) {
       setIsInitialized(true);
       return;
     }
 
-    // Load OneSignal SDK
     const script = document.createElement('script');
     script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
     script.defer = true;
@@ -174,7 +250,6 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         setIsInitialized(true);
         console.log('OneSignal Web initialized successfully');
 
-        // Check if already subscribed
         const permission = await OneSignal.Notifications.permission;
         const subscriptionId = await OneSignal.User.PushSubscription.id;
         
@@ -184,7 +259,6 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
           await updatePlayerIdInDatabase(subscriptionId, uid);
         }
 
-        // Listen for subscription changes
         OneSignal.User.PushSubscription.addEventListener('change', async (event: any) => {
           const newPlayerId = event.current.id;
           const optedIn = event.current.optedIn;
@@ -207,11 +281,12 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
 
   const updatePlayerIdInDatabase = async (newPlayerId: string, uid: string) => {
     try {
-      const platform = /Android/i.test(navigator.userAgent) 
-        ? 'android' 
-        : /iPhone|iPad|iPod/i.test(navigator.userAgent) 
-          ? 'ios' 
-          : 'web';
+      let platform = 'web';
+      if (isMedianApp()) {
+        platform = /Android/i.test(navigator.userAgent) ? 'android' : 'ios';
+      } else if (isNative) {
+        platform = /Android/i.test(navigator.userAgent) ? 'android' : 'ios';
+      }
 
       const { error } = await supabase
         .from('profiles')
@@ -256,6 +331,29 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     }
 
     try {
+      // Median.co
+      if (isMedianApp()) {
+        registerMedianPush();
+        
+        // Wait a bit for registration to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const info = await getMedianOneSignalInfo();
+        if (info) {
+          const newPlayerId = getMedianPlayerId(info);
+          const isSubscribed = info.oneSignalSubscribed;
+          
+          if (newPlayerId && isSubscribed) {
+            setPlayerId(newPlayerId);
+            setPushEnabled(true);
+            await updatePlayerIdInDatabase(newPlayerId, userId);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Capacitor Native
       if (isNative) {
         await nativeOptIn();
         const newPlayerId = await getNativePlayerId();
@@ -298,9 +396,19 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     if (!userId) return;
 
     try {
+      // Median.co - logout removes the external ID association
+      if (isMedianApp()) {
+        await logoutMedianOneSignal();
+        setPushEnabled(false);
+        await disablePushInDatabase(userId);
+        return;
+      }
+
+      // Capacitor Native
       if (isNative) {
         await nativeOptOut();
       } else if (window.OneSignal) {
+        // Web
         await window.OneSignal.User.PushSubscription.optOut();
       }
       
@@ -345,6 +453,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
       playerId, 
       pushEnabled,
       isNative,
+      platformType,
       requestPermission, 
       disablePush,
       sendTestPush,
