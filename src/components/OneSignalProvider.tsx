@@ -102,15 +102,18 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     if (!userId) return;
 
     const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
-    if (!appId) {
-      console.warn('OneSignal App ID not configured (VITE_ONESIGNAL_APP_ID)');
-      return;
-    }
 
     // Priority: Median.co > Capacitor Native > Web
+    // Median.co handles OneSignal initialization itself - we just use its API
     if (isMedianApp()) {
       console.log('Initializing OneSignal for Median.co platform');
       initMedianOneSignal(userId);
+      return;
+    }
+
+    // For Capacitor and Web, we need the App ID
+    if (!appId) {
+      console.warn('OneSignal App ID not configured (VITE_ONESIGNAL_APP_ID) - Push notifications disabled on web/capacitor');
       return;
     }
 
