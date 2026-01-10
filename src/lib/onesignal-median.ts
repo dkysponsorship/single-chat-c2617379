@@ -42,18 +42,38 @@ export const isMedianApp = (): boolean => {
 };
 
 /**
+ * Median bridge (window.median.onesignal) kabhi-kabhi late inject hota hai.
+ * Is helper se hum thoda wait karke reliably detect kar sakte hain.
+ */
+export const waitForMedianBridge = async (
+  timeoutMs: number = 6000,
+  intervalMs: number = 250
+): Promise<boolean> => {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (isMedianApp()) return true;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return isMedianApp();
+};
+
+/**
  * Get OneSignal subscription info from Median app
  */
 export const getMedianOneSignalInfo = async (): Promise<MedianOneSignalInfo | null> => {
   if (!isMedianApp()) return null;
-  
+
   try {
-    // Try the info() method first (newer API)
-    const info = await window.median!.onesignal.info();
-    return info;
-  } catch (error) {
-    console.error('Error getting Median OneSignal info:', error);
-    return null;
+    // Newer API
+    return await window.median!.onesignal.info();
+  } catch (error1) {
+    try {
+      // Some Median versions expose onesignalInfo()
+      return await window.median!.onesignal.onesignalInfo();
+    } catch (error2) {
+      console.error('Error getting Median OneSignal info:', error2);
+      return null;
+    }
   }
 };
 

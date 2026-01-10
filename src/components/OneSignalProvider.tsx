@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { isNativePlatform, isMedianPlatform, getPlatformType, PlatformType } from '@/lib/capacitor';
-import { 
-  initOneSignalNative, 
-  getPlayerId as getNativePlayerId, 
+import { isNativePlatform, getPlatformType, PlatformType } from '@/lib/capacitor';
+import {
+  initOneSignalNative,
+  getPlayerId as getNativePlayerId,
   isSubscribed as isNativeSubscribed,
   optIn as nativeOptIn,
   optOut as nativeOptOut
 } from '@/lib/onesignal-native';
 import {
   isMedianApp,
+  waitForMedianBridge,
   getMedianOneSignalInfo,
   registerMedianPush,
   loginMedianOneSignal,
@@ -102,29 +103,38 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     if (!userId) return;
 
     const appId = import.meta.env.VITE_ONESIGNAL_APP_ID;
+    let cancelled = false;
 
-    // Priority: Median.co > Capacitor Native > Web
-    // Median.co handles OneSignal initialization itself - we just use its API
-    if (isMedianApp()) {
-      console.log('Initializing OneSignal for Median.co platform');
-      initMedianOneSignal(userId);
-      return;
-    }
+    const boot = async () => {
+      // Median.co handles OneSignal initialization itself - we just use its API.
+      // Bridge kabhi-kabhi late inject hota hai, isliye wait bhi karte hain.
+      if (isMedianApp() || (!appId && !isNative && (await waitForMedianBridge()))) {
+        if (cancelled) return;
+        console.log('Initializing OneSignal for Median.co platform');
+        await initMedianOneSignal(userId);
+        return;
+      }
 
-    // For Capacitor and Web, we need the App ID
-    if (!appId) {
-      console.warn('OneSignal App ID not configured (VITE_ONESIGNAL_APP_ID) - Push notifications disabled on web/capacitor');
-      return;
-    }
+      // For Capacitor and Web, we need the App ID
+      if (!appId) {
+        console.warn('OneSignal App ID not configured (VITE_ONESIGNAL_APP_ID) - Push notifications disabled on web/capacitor');
+        return;
+      }
 
-    if (isNative) {
-      console.log('Initializing OneSignal for Capacitor Native platform');
-      initNativeOneSignal(appId, userId);
-      return;
-    }
+      if (isNative) {
+        console.log('Initializing OneSignal for Capacitor Native platform');
+        initNativeOneSignal(appId, userId);
+        return;
+      }
 
-    console.log('Initializing OneSignal for Web platform');
-    initWebOneSignal(appId, userId);
+      console.log('Initializing OneSignal for Web platform');
+      initWebOneSignal(appId, userId);
+    };
+
+    boot();
+    return () => {
+      cancelled = true;
+    };
   }, [userId, isNative]);
 
   const initMedianOneSignal = async (uid: string) => {
@@ -334,25 +344,34 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     }
 
     try {
-      // Median.co
-      if (isMedianApp()) {
-        registerMedianPush();
-        
-        // Wait a bit for registration to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const info = await getMedianOneSignalInfo();
-        if (info) {
-          const newPlayerId = getMedianPlayerId(info);
-          const isSubscribed = info.oneSignalSubscribed;
-          
-          if (newPlayerId && isSubscribed) {
-            setPlayerId(newPlayerId);
-            setPushEnabled(true);
-            await updatePlayerIdInDatabase(newPlayerId, userId);
-            return true;
-          }
+      // Median.co (bridge may load late)
+      const medianReady = isMedianApp() || (await waitForMedianBridge());
+      if (medianReady) {
+        if (!isInitialized) {
+          await initMedianOneSignal(userId);
         }
+
+        registerMedianPush();
+
+        // Registration can take a few seconds; poll info until subscribed.
+        const start = Date.now();
+        const timeoutMs = 10000;
+        while (Date.now() - start < timeoutMs) {
+          const info = await getMedianOneSignalInfo();
+          if (info) {
+            const newPlayerId = getMedianPlayerId(info);
+            const subscribed = info.oneSignalSubscribed;
+
+            if (newPlayerId && subscribed) {
+              setPlayerId(newPlayerId);
+              setPushEnabled(true);
+              await updatePlayerIdInDatabase(newPlayerId, userId);
+              return true;
+            }
+          }
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+
         return false;
       }
 
@@ -361,7 +380,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         await nativeOptIn();
         const newPlayerId = await getNativePlayerId();
         const subscribed = await isNativeSubscribed();
-        
+
         if (newPlayerId && subscribed) {
           setPlayerId(newPlayerId);
           setPushEnabled(true);
@@ -380,14 +399,14 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
       await window.OneSignal.Notifications.requestPermission();
       const permission = await window.OneSignal.Notifications.permission;
       const subscriptionId = await window.OneSignal.User.PushSubscription.id;
-      
+
       if (permission && subscriptionId) {
         setPlayerId(subscriptionId);
         setPushEnabled(true);
         await updatePlayerIdInDatabase(subscriptionId, userId);
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error requesting push permission:', error);
@@ -414,7 +433,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         // Web
         await window.OneSignal.User.PushSubscription.optOut();
       }
-      
+
       setPushEnabled(false);
       await disablePushInDatabase(userId);
     } catch (error) {
@@ -423,18 +442,18 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
   };
 
   const sendTestPush = async (): Promise<boolean> => {
-    if (!playerId || !userId) {
-      console.warn('No player ID or user ID for test push');
+    if (!userId) {
+      console.warn('No user ID for test push');
       return false;
     }
 
     try {
       const { error } = await supabase.functions.invoke('send-push-notification', {
         body: {
-          playerId,
+          recipientUserId: userId,
           title: '🎉 Test Notification',
-          message: 'Push notifications are working!',
-          data: { test: true },
+          body: 'Push notifications are working!',
+          data: { type: 'test' },
         },
       });
 
@@ -442,7 +461,7 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         console.error('Test push failed:', error);
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error sending test push:', error);

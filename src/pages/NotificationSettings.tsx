@@ -65,13 +65,13 @@ const NotificationSettings = () => {
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Push Notifications Card */}
-        <Card className={oneSignal?.pushEnabled ? "border-green-500/20 bg-green-500/5" : "border-primary/20 bg-primary/5"}>
+        <Card className={oneSignal?.pushEnabled ? "border-primary/20 bg-primary/5" : "border-border"}>
           <CardHeader className="pb-3">
-<CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-primary" />
               Push Notifications
               {oneSignal?.platformType === 'median' && (
-                <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   Native App
                 </span>
               )}
@@ -123,7 +123,7 @@ const NotificationSettings = () => {
             
             {oneSignal?.playerId && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 text-green-500" />
+                <CheckCircle className="w-3 h-3 text-primary" />
                 Device registered
               </p>
             )}
