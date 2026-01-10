@@ -270,6 +270,13 @@ export const searchUsers = async (query: string, currentUserId: string): Promise
 // Friend requests
 export const sendFriendRequest = async (fromUserId: string, toUserId: string): Promise<boolean> => {
   try {
+    // Get sender's profile for notification
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('id', fromUserId)
+      .single();
+
     const { error } = await supabase
       .from('friend_requests')
       .insert({
@@ -278,7 +285,26 @@ export const sendFriendRequest = async (fromUserId: string, toUserId: string): P
         status: 'pending'
       });
 
-    return !error;
+    if (error) return false;
+
+    // Send push notification to recipient
+    try {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          recipientUserId: toUserId,
+          title: '👋 New Friend Request',
+          body: `${senderProfile?.display_name || 'Someone'} sent you a friend request`,
+          data: {
+            type: 'friend_request',
+            senderId: fromUserId,
+          },
+        },
+      });
+    } catch (pushError) {
+      console.log('Push notification failed (non-critical):', pushError);
+    }
+
+    return true;
   } catch (error) {
     console.error("Error sending friend request:", error);
     return false;
@@ -321,22 +347,44 @@ export const getFriendRequests = (userId: string, callback: (requests: any[]) =>
 
 export const respondToFriendRequest = async (requestId: string, accept: boolean): Promise<boolean> => {
   try {
-    if (accept) {
-      // Get the request details first
-      const { data: request } = await supabase
-        .from('friend_requests')
-        .select('from_user_id, to_user_id')
-        .eq('id', requestId)
+    // Get the request details first
+    const { data: request } = await supabase
+      .from('friend_requests')
+      .select('from_user_id, to_user_id')
+      .eq('id', requestId)
+      .single();
+
+    if (accept && request) {
+      // Create friendship
+      await supabase
+        .from('friendships')
+        .insert({
+          user1_id: request.from_user_id,
+          user2_id: request.to_user_id
+        });
+
+      // Get acceptor's profile for notification
+      const { data: acceptorProfile } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', request.to_user_id)
         .single();
 
-      if (request) {
-        // Create friendship
-        await supabase
-          .from('friendships')
-          .insert({
-            user1_id: request.from_user_id,
-            user2_id: request.to_user_id
-          });
+      // Send push notification to the person who sent the request
+      try {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            recipientUserId: request.from_user_id,
+            title: '🎉 Friend Request Accepted!',
+            body: `${acceptorProfile?.display_name || 'Someone'} accepted your friend request`,
+            data: {
+              type: 'friend_accepted',
+              senderId: request.to_user_id,
+            },
+          },
+        });
+      } catch (pushError) {
+        console.log('Push notification failed (non-critical):', pushError);
       }
     }
 
