@@ -74,6 +74,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Determine if this is a subscription ID (UUID format) or legacy player ID
+    // Subscription IDs are UUIDs (36 chars with hyphens), player IDs are shorter
+    const playerId = profile.onesignal_player_id;
+    const isSubscriptionId = playerId.length === 36 && playerId.includes('-');
+    
+    console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId);
+
+    // Build the request body based on ID type
+    const requestBody: Record<string, any> = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: title },
+      contents: { en: body },
+      data: data || {},
+    };
+
+    // Use the appropriate targeting field
+    if (isSubscriptionId) {
+      // New format: subscription IDs (from Median.co and newer SDKs)
+      requestBody.include_subscription_ids = [playerId];
+    } else {
+      // Legacy format: player IDs
+      requestBody.include_player_ids = [playerId];
+    }
+
     // Send push notification via OneSignal
     const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -81,13 +105,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
       },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_player_ids: [profile.onesignal_player_id],
-        headings: { en: title },
-        contents: { en: body },
-        data: data || {},
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const oneSignalResult = await oneSignalResponse.json();
