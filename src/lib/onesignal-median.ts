@@ -20,9 +20,11 @@ declare global {
 
 export interface MedianOneSignalInfo {
   oneSignalUserId: string | null;      // Legacy player ID
-  oneSignalSubscribed: boolean;
+  oneSignalSubscribed?: boolean;       // Legacy subscribed flag
+  oneSignalId?: string;                // Sometimes used instead of oneSignalUserId
   subscription?: {
     id: string;                         // Subscription ID (new format)
+    optedIn?: boolean;                  // New subscription opted-in status
   };
   externalId?: string;
   oneSignalRequiresPrivacyConsent?: boolean;
@@ -33,6 +35,26 @@ interface MedianOneSignalStatus {
   subscribed: boolean;
   userId: string | null;
 }
+
+/**
+ * Check if user is subscribed/opted-in from Median OneSignal info.
+ * Supports multiple Median API versions.
+ */
+export const isMedianSubscribed = (info: MedianOneSignalInfo | null): boolean => {
+  if (!info) return false;
+  
+  // Priority 1: New subscription.optedIn (most reliable for newer Median)
+  if (info.subscription?.optedIn === true) return true;
+  
+  // Priority 2: Legacy oneSignalSubscribed flag
+  if (info.oneSignalSubscribed === true) return true;
+  
+  // Priority 3: If we have a subscription ID, consider it opted-in
+  // (some Median versions don't set optedIn explicitly)
+  if (info.subscription?.id) return true;
+  
+  return false;
+};
 
 /**
  * Check if running inside Median.co app
@@ -58,23 +80,51 @@ export const waitForMedianBridge = async (
 };
 
 /**
- * Get OneSignal subscription info from Median app
+ * Get OneSignal subscription info from Median app.
+ * Tries multiple API methods for compatibility with different Median versions.
  */
 export const getMedianOneSignalInfo = async (): Promise<MedianOneSignalInfo | null> => {
   if (!isMedianApp()) return null;
 
   try {
-    // Newer API
-    return await window.median!.onesignal.info();
-  } catch (error1) {
-    try {
-      // Some Median versions expose onesignalInfo()
-      return await window.median!.onesignal.onesignalInfo();
-    } catch (error2) {
-      console.error('Error getting Median OneSignal info:', error2);
-      return null;
+    // Method 1: Newer API - info()
+    const info = await window.median!.onesignal.info();
+    if (info) {
+      console.log('[Median] Got info from .info():', JSON.stringify(info));
+      return info;
     }
+  } catch (e1) {
+    console.log('[Median] .info() failed:', e1);
   }
+
+  try {
+    // Method 2: Some versions use onesignalInfo()
+    const info = await window.median!.onesignal.onesignalInfo();
+    if (info) {
+      console.log('[Median] Got info from .onesignalInfo():', JSON.stringify(info));
+      return info;
+    }
+  } catch (e2) {
+    console.log('[Median] .onesignalInfo() failed:', e2);
+  }
+
+  try {
+    // Method 3: Use status() as fallback and construct info
+    const status = await window.median!.onesignal.status();
+    if (status) {
+      console.log('[Median] Got status from .status():', JSON.stringify(status));
+      return {
+        oneSignalUserId: status.userId,
+        oneSignalSubscribed: status.subscribed,
+        subscription: status.userId ? { id: status.userId, optedIn: status.subscribed } : undefined,
+      };
+    }
+  } catch (e3) {
+    console.log('[Median] .status() failed:', e3);
+  }
+
+  console.warn('[Median] All OneSignal info methods failed');
+  return null;
 };
 
 /**
@@ -114,11 +164,14 @@ export const logoutMedianOneSignal = async (): Promise<void> => {
 };
 
 /**
- * Get the player ID (subscription ID) from Median OneSignal info
+ * Get the player ID (subscription ID) from Median OneSignal info.
+ * Tries multiple fields for compatibility.
  */
 export const getMedianPlayerId = (info: MedianOneSignalInfo): string | null => {
-  // Prefer the subscription.id (newer format), fallback to oneSignalUserId (legacy)
-  return info.subscription?.id || info.oneSignalUserId || null;
+  // Priority: subscription.id (new) > oneSignalUserId (legacy) > oneSignalId (alternate legacy)
+  const playerId = info.subscription?.id || info.oneSignalUserId || info.oneSignalId || null;
+  console.log('[Median] Extracted playerId:', playerId, 'from info keys:', Object.keys(info));
+  return playerId;
 };
 
 /**

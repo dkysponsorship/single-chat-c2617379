@@ -16,6 +16,7 @@ import {
   loginMedianOneSignal,
   logoutMedianOneSignal,
   getMedianPlayerId,
+  isMedianSubscribed,
   setupMedianSubscriptionListener,
   MedianOneSignalInfo,
 } from '@/lib/onesignal-median';
@@ -146,29 +147,31 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
       const info = await getMedianOneSignalInfo();
       if (info) {
         const currentPlayerId = getMedianPlayerId(info);
-        const isSubscribed = info.oneSignalSubscribed;
+        const subscribed = isMedianSubscribed(info);
 
-        console.log('Median OneSignal info:', { playerId: currentPlayerId, subscribed: isSubscribed });
+        console.log('[OneSignal] Median init - playerId:', currentPlayerId, 'subscribed:', subscribed, 'raw info:', JSON.stringify(info));
 
         setPlayerId(currentPlayerId);
-        setPushEnabled(isSubscribed);
+        setPushEnabled(subscribed);
 
-        if (currentPlayerId && isSubscribed) {
+        if (currentPlayerId && subscribed) {
           await updatePlayerIdInDatabase(currentPlayerId, uid);
         }
+      } else {
+        console.log('[OneSignal] Median init - no info returned');
       }
 
       // Setup subscription change listener
       setupMedianSubscriptionListener(async (newInfo: MedianOneSignalInfo) => {
         const newPlayerId = getMedianPlayerId(newInfo);
-        const isSubscribed = newInfo.oneSignalSubscribed;
+        const subscribed = isMedianSubscribed(newInfo);
 
-        console.log('Median subscription changed:', { playerId: newPlayerId, subscribed: isSubscribed });
+        console.log('[OneSignal] Median subscription changed - playerId:', newPlayerId, 'subscribed:', subscribed);
 
         setPlayerId(newPlayerId);
-        setPushEnabled(isSubscribed);
+        setPushEnabled(subscribed);
 
-        if (newPlayerId && isSubscribed) {
+        if (newPlayerId && subscribed) {
           await updatePlayerIdInDatabase(newPlayerId, uid);
         } else {
           await disablePushInDatabase(uid);
@@ -346,32 +349,43 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
     try {
       // Median.co (bridge may load late)
       const medianReady = isMedianApp() || (await waitForMedianBridge());
+      console.log('[OneSignal] requestPermission - medianReady:', medianReady);
+      
       if (medianReady) {
         if (!isInitialized) {
           await initMedianOneSignal(userId);
         }
 
+        console.log('[OneSignal] Calling registerMedianPush()...');
         registerMedianPush();
 
         // Registration can take a few seconds; poll info until subscribed.
         const start = Date.now();
-        const timeoutMs = 10000;
+        const timeoutMs = 15000; // Increased to 15s for slower devices
+        let lastInfo: MedianOneSignalInfo | null = null;
+        
         while (Date.now() - start < timeoutMs) {
           const info = await getMedianOneSignalInfo();
+          lastInfo = info;
+          
           if (info) {
             const newPlayerId = getMedianPlayerId(info);
-            const subscribed = info.oneSignalSubscribed;
+            const subscribed = isMedianSubscribed(info);
+
+            console.log('[OneSignal] Polling - playerId:', newPlayerId, 'subscribed:', subscribed, 'elapsed:', Date.now() - start);
 
             if (newPlayerId && subscribed) {
               setPlayerId(newPlayerId);
               setPushEnabled(true);
               await updatePlayerIdInDatabase(newPlayerId, userId);
+              console.log('[OneSignal] Push enabled successfully!');
               return true;
             }
           }
           await new Promise((r) => setTimeout(r, 1000));
         }
 
+        console.warn('[OneSignal] Timeout waiting for subscription. Last info:', JSON.stringify(lastInfo));
         return false;
       }
 
