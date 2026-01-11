@@ -314,7 +314,19 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         .eq('id', uid);
 
       if (error) {
-        console.error('Error updating player ID:', error);
+        console.warn('[OneSignal] Profile update blocked; falling back to sync-push-profile:', error);
+        const { error: fnError } = await supabase.functions.invoke('sync-push-profile', {
+          body: {
+            onesignalPlayerId: newPlayerId,
+            pushEnabled: true,
+            devicePlatform: platform,
+          },
+        });
+        if (fnError) {
+          console.error('[OneSignal] sync-push-profile failed:', fnError);
+        } else {
+          console.log('[OneSignal] Player ID synced via backend function:', newPlayerId);
+        }
       } else {
         console.log('Player ID updated in database:', newPlayerId);
       }
@@ -333,7 +345,15 @@ export const OneSignalProvider: React.FC<OneSignalProviderProps> = ({ children }
         .eq('id', uid);
 
       if (error) {
-        console.error('Error disabling push:', error);
+        console.warn('[OneSignal] Disable push blocked; falling back to sync-push-profile:', error);
+        const { error: fnError } = await supabase.functions.invoke('sync-push-profile', {
+          body: {
+            pushEnabled: false,
+          },
+        });
+        if (fnError) {
+          console.error('[OneSignal] sync-push-profile disable failed:', fnError);
+        }
       }
     } catch (error) {
       console.error('Error disabling push:', error);
