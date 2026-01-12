@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare, Smartphone, Send, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Bell, BellOff, MessageSquare, Smartphone, Send, Loader2, CheckCircle, Bug } from "lucide-react";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { useOneSignalContext } from "@/components/OneSignalProvider";
@@ -242,6 +242,16 @@ const NotificationSettings = () => {
             </p>
           </CardContent>
         </Card>
+
+        {/* Debug Link */}
+        <Button 
+          variant="ghost" 
+          className="w-full text-muted-foreground" 
+          onClick={() => navigate('/push-debug')}
+        >
+          <Bug className="w-4 h-4 mr-2" />
+          Push Debug Console
+        </Button>
       </div>
     </div>
   );

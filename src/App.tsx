@@ -13,6 +13,7 @@ import Chat from "./pages/Chat";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import NotificationSettings from "./pages/NotificationSettings";
+import PushDebug from "./pages/PushDebug";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
                   <Route path="/chat/:friendId" element={<Chat />} />
                   <Route path="/profile/:userId" element={<Profile />} />
                   <Route path="/notification-settings" element={<NotificationSettings />} />
+                  <Route path="/push-debug" element={<PushDebug />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
