@@ -82,11 +82,20 @@ Deno.serve(async (req) => {
     console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId);
 
     // Build the request body based on ID type
+    // Add deep-link URL for notification tap action
+    const chatDeepLink = data?.senderId ? `/chat/${data.senderId}` : null;
+    
     const requestBody: Record<string, any> = {
       app_id: ONESIGNAL_APP_ID,
       headings: { en: title },
       contents: { en: body },
-      data: data || {},
+      data: {
+        ...(data || {}),
+        // Deep-link data for Median.co tap handler
+        targetUrl: chatDeepLink,
+      },
+      // For web: open specific URL when clicked
+      ...(chatDeepLink && { url: chatDeepLink }),
     };
 
     // Use the appropriate targeting field
@@ -97,6 +106,8 @@ Deno.serve(async (req) => {
       // Legacy format: player IDs
       requestBody.include_player_ids = [playerId];
     }
+
+    console.log('OneSignal request body:', JSON.stringify(requestBody));
 
     // Send push notification via OneSignal
     const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
