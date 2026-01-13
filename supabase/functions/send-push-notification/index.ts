@@ -19,28 +19,50 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
-    const ONESIGNAL_REST_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
+    const ONESIGNAL_APP_ID_RAW = Deno.env.get('ONESIGNAL_APP_ID');
+    const ONESIGNAL_REST_API_KEY_RAW = Deno.env.get('ONESIGNAL_REST_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+    // Normalize secrets by trimming whitespace/newlines
+    const appId = (ONESIGNAL_APP_ID_RAW ?? '').trim();
+    const apiKey = (ONESIGNAL_REST_API_KEY_RAW ?? '').trim();
+
+    // Log key info for debugging (never log full key!)
+    const apiKeyPrefix = apiKey.substring(0, 12);
+    const apiKeyLength = apiKey.length;
+    console.log('OneSignal config:', { appId, apiKeyPrefix, apiKeyLength });
+
+    if (!appId || !apiKey) {
       console.error('OneSignal credentials not configured');
       return new Response(
-        JSON.stringify({ error: 'OneSignal credentials not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'OneSignal credentials not configured' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate API key type - V2 App keys should start with os_v2_app_
+    const isV2ApiKey = apiKey.startsWith('os_v2_');
+    if (isV2ApiKey && !apiKey.startsWith('os_v2_app_')) {
+      console.error('Invalid API key type. V2 keys must be App API Keys (os_v2_app_...), not Organization keys (os_v2_org_...)');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid OneSignal API key type',
+          details: 'Use OneSignal App API Key (os_v2_app_...), not Organization Key (os_v2_org_...)',
+          apiKeyPrefix,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // OneSignal supports legacy REST API keys (Authorization: Basic) and newer V2 keys (Authorization: Key)
-    // V2 keys typically start with "os_v2_".
-    const isV2ApiKey = ONESIGNAL_REST_API_KEY.startsWith('os_v2_');
     const oneSignalApiUrl = isV2ApiKey
       ? 'https://api.onesignal.com/notifications?c=push'
       : 'https://onesignal.com/api/v1/notifications';
     const oneSignalAuthHeader = isV2ApiKey
-      ? `Key ${ONESIGNAL_REST_API_KEY}`
-      : `Basic ${ONESIGNAL_REST_API_KEY}`;
+      ? `Key ${apiKey}`
+      : `Basic ${apiKey}`;
 
     const { recipientUserId, title, body, data } = await req.json() as PushNotificationRequest;
 
@@ -96,7 +118,7 @@ Deno.serve(async (req) => {
     const chatDeepLink = data?.senderId ? `/chat/${data.senderId}` : null;
 
     const requestBody: Record<string, any> = {
-      app_id: ONESIGNAL_APP_ID,
+      app_id: appId,
       // V2 API expects target_channel for /notifications
       target_channel: 'push',
       headings: { en: title },
@@ -132,13 +154,21 @@ Deno.serve(async (req) => {
     });
 
     const oneSignalResult = await oneSignalResponse.json();
-    console.log('OneSignal response:', oneSignalResult);
+    console.log('OneSignal response status:', oneSignalResponse.status);
+    console.log('OneSignal response body:', oneSignalResult);
 
+    // Return 200 even on OneSignal failure so UI can see the actual error
     if (!oneSignalResponse.ok) {
       console.error('OneSignal API error:', oneSignalResult);
       return new Response(
-        JSON.stringify({ error: 'Failed to send push notification', details: oneSignalResult }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: false, 
+          reason: 'onesignal_rejected',
+          oneSignalStatus: oneSignalResponse.status,
+          oneSignalResult,
+          apiKeyPrefix,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
