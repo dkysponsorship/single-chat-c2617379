@@ -152,17 +152,39 @@ const PushDebug = () => {
       setPushResults(prev => [result, ...prev]);
 
       if (error) {
-        addLog('error', 'Push send failed:', error);
+        addLog('error', 'Push send failed (FunctionsError):', { name: error.name, message: error.message });
         toast({ title: "Push failed", description: error.message, variant: "destructive" });
       } else if (data?.success) {
         addLog('success', 'Push sent successfully!', data);
         toast({ title: "Push sent!", description: "Check your notifications" });
       } else {
-        addLog('warn', 'Push not delivered:', data);
-        toast({ title: "Push not delivered", description: data?.reason || "Unknown reason", variant: "destructive" });
+        // Show detailed OneSignal error if available
+        addLog('error', 'Push not delivered:', {
+          reason: data?.reason,
+          oneSignalStatus: data?.oneSignalStatus,
+          oneSignalResult: data?.oneSignalResult,
+          apiKeyPrefix: data?.apiKeyPrefix,
+          error: data?.error,
+          details: data?.details,
+        });
+        
+        // Build descriptive error message
+        let errorMsg = data?.reason || data?.error || 'Unknown reason';
+        if (data?.oneSignalResult?.errors) {
+          errorMsg = data.oneSignalResult.errors.join('; ');
+        }
+        if (data?.details) {
+          errorMsg = data.details;
+        }
+        
+        toast({ 
+          title: "Push not delivered", 
+          description: errorMsg, 
+          variant: "destructive" 
+        });
       }
     } catch (error: any) {
-      addLog('error', 'Exception sending push:', error);
+      addLog('error', 'Exception sending push:', { name: error.name, message: error.message, stack: error.stack });
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
@@ -300,7 +322,7 @@ const PushDebug = () => {
             <CardContent>
               <ScrollArea className="h-40">
                 <div className="space-y-2">
-                  {pushResults.map((result, i) => (
+                    {pushResults.map((result, i) => (
                     <div key={i} className={`p-2 rounded text-xs ${result.success ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
                       <div className="flex justify-between">
                         <span>{result.timestamp.toLocaleTimeString()}</span>
@@ -310,6 +332,15 @@ const PushDebug = () => {
                       </div>
                       {result.response?.reason && (
                         <p className="text-muted-foreground mt-1">Reason: {result.response.reason}</p>
+                      )}
+                      {result.response?.oneSignalStatus && (
+                        <p className="text-muted-foreground mt-1">OneSignal Status: {result.response.oneSignalStatus}</p>
+                      )}
+                      {result.response?.oneSignalResult?.errors && (
+                        <p className="text-red-500 mt-1">OneSignal Errors: {result.response.oneSignalResult.errors.join('; ')}</p>
+                      )}
+                      {result.response?.apiKeyPrefix && (
+                        <p className="text-muted-foreground mt-1">API Key Prefix: {result.response.apiKeyPrefix}</p>
                       )}
                       {result.error && (
                         <p className="text-red-500 mt-1">{result.error}</p>
