@@ -32,6 +32,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // OneSignal supports legacy REST API keys (Authorization: Basic) and newer V2 keys (Authorization: Key)
+    // V2 keys typically start with "os_v2_".
+    const isV2ApiKey = ONESIGNAL_REST_API_KEY.startsWith('os_v2_');
+    const oneSignalApiUrl = isV2ApiKey
+      ? 'https://api.onesignal.com/notifications?c=push'
+      : 'https://onesignal.com/api/v1/notifications';
+    const oneSignalAuthHeader = isV2ApiKey
+      ? `Key ${ONESIGNAL_REST_API_KEY}`
+      : `Basic ${ONESIGNAL_REST_API_KEY}`;
+
     const { recipientUserId, title, body, data } = await req.json() as PushNotificationRequest;
 
     if (!recipientUserId || !title || !body) {
@@ -78,15 +88,17 @@ Deno.serve(async (req) => {
     // Subscription IDs are UUIDs (36 chars with hyphens), player IDs are shorter
     const playerId = profile.onesignal_player_id;
     const isSubscriptionId = playerId.length === 36 && playerId.includes('-');
-    
-    console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId);
+
+    console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId, 'isV2ApiKey:', isV2ApiKey);
 
     // Build the request body based on ID type
     // Add deep-link URL for notification tap action
     const chatDeepLink = data?.senderId ? `/chat/${data.senderId}` : null;
-    
+
     const requestBody: Record<string, any> = {
       app_id: ONESIGNAL_APP_ID,
+      // V2 API expects target_channel for /notifications
+      target_channel: 'push',
       headings: { en: title },
       contents: { en: body },
       data: {
@@ -110,11 +122,11 @@ Deno.serve(async (req) => {
     console.log('OneSignal request body:', JSON.stringify(requestBody));
 
     // Send push notification via OneSignal
-    const oneSignalResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+    const oneSignalResponse = await fetch(oneSignalApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
+        'Authorization': oneSignalAuthHeader,
       },
       body: JSON.stringify(requestBody),
     });
