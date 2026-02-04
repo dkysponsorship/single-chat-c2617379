@@ -337,7 +337,13 @@ const PushDebug = () => {
                         <p className="text-muted-foreground mt-1">OneSignal Status: {result.response.oneSignalStatus}</p>
                       )}
                       {result.response?.oneSignalResult?.errors && (
-                        <p className="text-red-500 mt-1">OneSignal Errors: {result.response.oneSignalResult.errors.join('; ')}</p>
+                        <p className="text-red-500 mt-1">OneSignal Errors: {
+                          Array.isArray(result.response.oneSignalResult.errors) 
+                            ? result.response.oneSignalResult.errors.join('; ')
+                            : typeof result.response.oneSignalResult.errors === 'string'
+                              ? result.response.oneSignalResult.errors
+                              : JSON.stringify(result.response.oneSignalResult.errors)
+                        }</p>
                       )}
                       {result.response?.apiKeyPrefix && (
                         <p className="text-muted-foreground mt-1">API Key Prefix: {result.response.apiKeyPrefix}</p>
