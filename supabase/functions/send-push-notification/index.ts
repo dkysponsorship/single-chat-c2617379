@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('onesignal_player_id, push_enabled')
+      .select('onesignal_player_id, push_enabled, device_platform')
       .eq('id', recipientUserId)
       .single();
 
@@ -110,8 +110,12 @@ Deno.serve(async (req) => {
     // Subscription IDs are UUIDs (36 chars with hyphens), player IDs are shorter
     const playerId = profile.onesignal_player_id;
     const isSubscriptionId = playerId.length === 36 && playerId.includes('-');
+    
+    // Check if this is a native mobile app (Median.co) - don't include URL for these
+    // as Median.co handles tap via JavaScript callback (median_onesignal_push_opened)
+    const isMobileApp = profile.device_platform === 'android' || profile.device_platform === 'ios';
 
-    console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId, 'isV2ApiKey:', isV2ApiKey);
+    console.log('Sending push to:', playerId, 'isSubscriptionId:', isSubscriptionId, 'isV2ApiKey:', isV2ApiKey, 'isMobileApp:', isMobileApp);
 
     // Build the request body based on ID type
     // Add deep-link URL for notification tap action
@@ -127,9 +131,11 @@ Deno.serve(async (req) => {
         ...(data || {}),
         // Deep-link data for Median.co tap handler
         targetUrl: chatDeepLink,
+        senderId: data?.senderId,
       },
-      // For web: open specific URL when clicked
-      ...(chatDeepLink && { url: chatDeepLink }),
+      // For web ONLY: open specific URL when clicked
+      // Don't set for mobile apps - Median.co handles via JS callback
+      ...(!isMobileApp && chatDeepLink && { url: chatDeepLink }),
     };
 
     // Use the appropriate targeting field
