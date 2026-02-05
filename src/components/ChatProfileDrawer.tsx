@@ -55,7 +55,7 @@
                <div
                  className={cn(
                    'absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-background',
-                   friend.isOnline ? 'bg-green-500' : 'bg-muted'
+                  friend.isOnline ? 'bg-[hsl(var(--online-status))]' : 'bg-muted'
                  )}
                />
              </div>
