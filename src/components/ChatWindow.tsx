@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus } from "lucide-react";
 import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
+import { ChatProfileDrawer } from "@/components/ChatProfileDrawer";
+import { ChatThemeBackground } from "@/components/ChatThemeBackground";
+import { useChatTheme } from "@/hooks/useChatTheme";
 
 // Message status helper: single tick = sent, double tick = delivered, double blue tick = read
 const MessageStatus = ({ message }: { message: Message }) => {
@@ -110,6 +113,9 @@ export const ChatWindow = ({
   // Get current user ID from friend's perspective in chatId
   const currentUserId = chatId.split('_').find(id => id !== friend.id) || '';
   const { toggleReaction, getGroupedReactions } = useMessageReactions(chatId, currentUserId);
+  
+  // Chat theme state
+  const { currentTheme, setTheme } = useChatTheme(chatId, currentUserId);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -286,21 +292,29 @@ export const ChatWindow = ({
           {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-6 w-4 p-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>}
-          <div className="relative">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={friend.avatar} alt={friend.name} />
-              <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                {friend.name.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-status-online" : "bg-status-offline")} />
-          </div>
-          <div>
-            <h3 className="font-semibold">{friend.name}</h3>
-            <p className="text-xs text-muted-foreground">
-              {friend.isOnline ? "Online" : "Offline"}
-            </p>
-          </div>
+          <ChatProfileDrawer
+            friend={friend}
+            currentTheme={currentTheme}
+            onSelectTheme={setTheme}
+          >
+            <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="relative">
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={friend.avatar} alt={friend.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    {friend.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-status-online" : "bg-status-offline")} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">{friend.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {friend.isOnline ? "Online" : "Offline"}
+                </p>
+              </div>
+            </button>
+          </ChatProfileDrawer>
         </div>
         <div className="flex gap-1">
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
@@ -348,9 +362,12 @@ export const ChatWindow = ({
       </div>
 
       {/* Messages Area - With top padding for fixed header */}
-      <ScrollArea className="flex-1 p-2 overflow-x-hidden" style={{
+      <ScrollArea className="flex-1 p-2 overflow-x-hidden relative" style={{
       paddingTop: 'calc(4rem + env(safe-area-inset-top))'
     }}>
+        {/* Theme Background */}
+        <ChatThemeBackground theme={currentTheme} />
+        
         <div className="space-y-3 w-full overflow-hidden">
           {messages.map((message, index) => {
           const swipeState = swipeStates[message.id];
