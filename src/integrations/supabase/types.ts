@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_themes: {
+        Row: {
+          chat_id: string
+          created_at: string
+          id: string
+          theme_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          id?: string
+          theme_key?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          id?: string
+          theme_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
