@@ -115,7 +115,7 @@ export const ChatWindow = ({
   const { toggleReaction, getGroupedReactions } = useMessageReactions(chatId, currentUserId);
   
   // Chat theme state
-  const { currentTheme, setTheme } = useChatTheme(chatId, currentUserId);
+  const { currentTheme, customImageUrl, setTheme, setCustomImage } = useChatTheme(chatId, currentUserId);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
