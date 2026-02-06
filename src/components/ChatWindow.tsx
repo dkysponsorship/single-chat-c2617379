@@ -368,7 +368,7 @@ export const ChatWindow = ({
       paddingTop: 'calc(4rem + env(safe-area-inset-top))'
     }}>
         {/* Theme Background */}
-        <ChatThemeBackground theme={currentTheme} />
+        <ChatThemeBackground theme={currentTheme} customImageUrl={customImageUrl} />
         
         <div className="space-y-3 w-full overflow-hidden">
           {messages.map((message, index) => {
