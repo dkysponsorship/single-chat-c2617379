@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           chat_id: string
           created_at: string
+          custom_image_url: string | null
           id: string
           theme_key: string
           updated_at: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           chat_id: string
           created_at?: string
+          custom_image_url?: string | null
           id?: string
           theme_key?: string
           updated_at?: string
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           chat_id?: string
           created_at?: string
+          custom_image_url?: string | null
           id?: string
           theme_key?: string
           updated_at?: string

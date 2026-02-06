@@ -115,7 +115,7 @@ export const ChatWindow = ({
   const { toggleReaction, getGroupedReactions } = useMessageReactions(chatId, currentUserId);
   
   // Chat theme state
-  const { currentTheme, setTheme } = useChatTheme(chatId, currentUserId);
+  const { currentTheme, customImageUrl, setTheme, setCustomImage } = useChatTheme(chatId, currentUserId);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -295,7 +295,9 @@ export const ChatWindow = ({
           <ChatProfileDrawer
             friend={friend}
             currentTheme={currentTheme}
+            customImageUrl={customImageUrl}
             onSelectTheme={setTheme}
+            onSelectCustomImage={setCustomImage}
           >
             <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="relative">
@@ -305,7 +307,7 @@ export const ChatWindow = ({
                     {friend.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-status-online" : "bg-status-offline")} />
+                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-[hsl(var(--online-status))]" : "bg-muted")} />
               </div>
               <div className="text-left">
                 <h3 className="font-semibold">{friend.name}</h3>
@@ -366,7 +368,7 @@ export const ChatWindow = ({
       paddingTop: 'calc(4rem + env(safe-area-inset-top))'
     }}>
         {/* Theme Background */}
-        <ChatThemeBackground theme={currentTheme} />
+        <ChatThemeBackground theme={currentTheme} customImageUrl={customImageUrl} />
         
         <div className="space-y-3 w-full overflow-hidden">
           {messages.map((message, index) => {
