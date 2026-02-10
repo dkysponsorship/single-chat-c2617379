@@ -37,6 +37,13 @@ const Chat = () => {
   
   const chatId = currentUser && friendId ? createChatId(currentUser.id, friendId) : '';
   const { friendTyping, handleInputChange, stopTyping } = useTypingIndicator(chatId, currentUser?.id || null);
+  
+  // Voice call hook
+  const voiceCall = useVoiceCall({
+    currentUserId: currentUser?.id || '',
+    friendId: friendId || '',
+    chatId,
+  });
 
   useEffect(() => {
     const initChat = async () => {
