@@ -71,6 +71,8 @@ interface ChatWindowProps {
   onLogout?: () => void;
   currentUserName?: string;
   onInputChange?: () => void;
+  onStartCall?: () => void;
+  onSendLocation?: () => void;
 }
 export const ChatWindow = ({
   friend,
