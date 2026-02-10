@@ -502,6 +502,9 @@ const Chat = () => {
       isEdited: msg.is_edited,
       replyTo: msg.reply_to,
       readAt: msg.read_at ? new Date(msg.read_at) : null,
+      locationLat: msg.location_lat,
+      locationLng: msg.location_lng,
+      locationAddress: msg.location_address,
       repliedMessage: repliedMessage ? {
         id: repliedMessage.id,
         text: repliedMessage.content,
