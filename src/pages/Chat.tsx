@@ -402,6 +402,63 @@ const Chat = () => {
     navigate("/home");
   };
 
+  // Handle sending location
+  const handleSendLocation = useCallback(async () => {
+    if (!currentUser || !friendId) return;
+    
+    if (!navigator.geolocation) {
+      toast({ title: "Location not supported", description: "Your browser doesn't support location.", variant: "destructive" });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const chatId = createChatId(currentUser.id, friendId);
+        
+        // Try reverse geocoding
+        let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await res.json();
+          if (data.display_name) address = data.display_name.slice(0, 100);
+        } catch {}
+
+        const { error } = await supabase.from("messages").insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content: `📍 Location`,
+          location_lat: latitude,
+          location_lng: longitude,
+          location_address: address,
+        } as any);
+
+        if (error) {
+          toast({ title: "Failed to send location", variant: "destructive" });
+        } else {
+          sendPushNotification({
+            recipientUserId: friendId,
+            title: currentUser.displayName,
+            body: '📍 Location shared',
+            data: { chatId, senderId: currentUser.id },
+          }).catch(() => {});
+        }
+      },
+      () => {
+        toast({ title: "Location access denied", description: "Please allow location access.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true }
+    );
+  }, [currentUser, friendId, toast]);
+
+  // Handle accepting incoming call
+  const handleAcceptCall = useCallback(async () => {
+    const offerData = await voiceCall.getIncomingCallOffer();
+    if (offerData) {
+      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit);
+    }
+  }, [voiceCall]);
+
   const handleLogout = async () => {
     await logoutUser();
     sessionStorage.removeItem("currentUser");
