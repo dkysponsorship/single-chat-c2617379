@@ -547,8 +547,25 @@ const Chat = () => {
           onSendVoice={handleSendVoice}
           onSendImage={handleSendImage}
           onInputChange={handleInputChange}
+          onStartCall={friendId !== AI_FRIEND_ID ? voiceCall.startCall : undefined}
+          onSendLocation={friendId !== AI_FRIEND_ID ? handleSendLocation : undefined}
         />
       </div>
+      
+      {/* Voice Call Screen */}
+      <VoiceCallScreen
+        callState={voiceCall.callState}
+        friendName={friend.displayName}
+        friendAvatar={friend.avatar}
+        callDuration={voiceCall.callDuration}
+        isMuted={voiceCall.isMuted}
+        isSpeaker={voiceCall.isSpeaker}
+        onAccept={handleAcceptCall}
+        onDecline={() => voiceCall.callSignalId && voiceCall.declineCall(voiceCall.callSignalId)}
+        onEnd={() => voiceCall.endCall()}
+        onToggleMute={voiceCall.toggleMute}
+        onToggleSpeaker={voiceCall.toggleSpeaker}
+      />
     </div>
   );
 };
