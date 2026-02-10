@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_signals: {
+        Row: {
+          caller_id: string
+          chat_id: string
+          created_at: string
+          id: string
+          receiver_id: string
+          signal_data: Json | null
+          signal_type: string
+          status: string
+        }
+        Insert: {
+          caller_id: string
+          chat_id: string
+          created_at?: string
+          id?: string
+          receiver_id: string
+          signal_data?: Json | null
+          signal_type: string
+          status?: string
+        }
+        Update: {
+          caller_id?: string
+          chat_id?: string
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          signal_data?: Json | null
+          signal_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       chat_themes: {
         Row: {
           chat_id: string
@@ -257,6 +290,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_edited: boolean | null
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
           read_at: string | null
           reply_to: string | null
           sender_id: string
@@ -271,6 +307,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           read_at?: string | null
           reply_to?: string | null
           sender_id: string
@@ -285,6 +324,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_edited?: boolean | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
           read_at?: string | null
           reply_to?: string | null
           sender_id?: string
