@@ -1,117 +1,202 @@
 
-# Custom Image Background for Chat Theme
+
+# Voice Call aur Location Sharing - Instagram Style
 
 ## Overview
-Tumhe chat background me apni custom image lagane ka option chahiye jaise reference image me hai (Sidhu Moose Wala poster type). Animated themes ko remove karke simple image/gradient themes rakhne hain. Buttons ki position same rahegi.
+Chat header me Instagram jaisa phone icon add karenge voice call ke liye, aur chat me location share karne ka option bhi milega. Voice call WebRTC se real-time hogi aur location GPS coordinates + Google Maps link ke saath share hoga.
 
-## Kya Changes Honge
+## Voice Call Feature
 
-### 1. Database Update
-`chat_themes` table me ek naya column add karenge:
-- `custom_image_url` - User ki upload ki hui image ka URL store karne ke liye
+### Kaise kaam karega
+1. Chat header me phone icon hoga (Instagram jaisa)
+2. Tap karne pe calling screen aayegi with ringtone
+3. Dusre user ko incoming call notification aayegi
+4. Accept karne pe real-time voice call start
+5. Call end button se disconnect
 
-### 2. Storage Bucket
-Chat wallpapers store karne ke liye ek naya storage bucket banayenge:
-- Bucket name: `chat-wallpapers`
-- Users apni images upload kar sakenge
+### Signaling - Supabase Realtime
+WebRTC call ke liye "signaling" chahiye (dono users ka connection setup). Iske liye:
+- `call_signals` table banayenge database me
+- Supabase Realtime se signal messages exchange honge
+- Offer/Answer/ICE candidates exchange
 
-### 3. Theme System Changes
-Themes se animated options remove karke simple options rakhenge:
-- Default (no background)
-- Minimal Light
-- Minimal Dark
-- Custom Image (user upload)
+### Call Flow
+```text
+User A taps Call button
+    |
+    v
+Create WebRTC offer --> Store in call_signals table
+    |
+    v
+User B gets notification (Realtime subscription)
+    |
+    v
+User B sees Incoming Call screen
+    |
+    v
+User B Accepts --> Creates WebRTC answer --> Store in call_signals
+    |
+    v
+ICE candidates exchange via call_signals table
+    |
+    v
+Voice call connected (peer-to-peer audio)
+    |
+    v
+Either user taps End --> Call disconnected
+```
 
-### 4. UI Updates
+### UI Screens
+**Outgoing Call Screen:**
+- Friend ka avatar (large, centered)
+- Friend ka name
+- "Calling..." text with animation
+- Red end call button
 
-**ChatThemeSelector.tsx:**
-- Simple theme cards (gradients only)
-- "Choose from Gallery" button - phone gallery se image select
-- Uploaded image ka preview
+**Incoming Call Screen:**
+- Friend ka avatar (large, centered)
+- Friend ka name
+- "Incoming Call" text
+- Green accept + Red decline buttons
 
-**ChatThemeBackground.tsx:**
-- Animations code remove
-- Custom image display support with `object-cover` style (image puri screen cover karega, reference image jaisa)
+**Active Call Screen:**
+- Friend ka avatar
+- Call duration timer
+- Mute button
+- Speaker button
+- Red end call button
 
-**ChatProfileDrawer.tsx:**
-- Theme selector pe custom image option
+## Location Sharing Feature
 
-### 5. Image Upload Flow
-1. User "Choose from Gallery" tap karega
-2. Phone gallery se image select
-3. Image upload hogi storage me
-4. Background apply ho jayega
+### Kaise kaam karega
+1. Message input ke paas attachment menu me "Location" option
+2. Tap karne pe browser GPS permission maangega
+3. Current location milega
+4. Chat me location message show hoga with map preview
+5. Tap karne pe Google Maps me khulega
+
+### Location Message
+- Static map image preview (using OpenStreetMap)
+- Address text (if available via reverse geocoding)
+- Clickable - opens Google Maps with coordinates
+
+## Database Changes
+
+### New Table: `call_signals`
+```text
++----------------+-----------+
+| Column         | Type      |
++----------------+-----------+
+| id             | uuid (PK) |
+| chat_id        | text      |
+| caller_id      | uuid      |
+| receiver_id    | uuid      |
+| signal_type    | text      |
+| signal_data    | jsonb     |
+| status         | text      |
+| created_at     | timestamp |
++----------------+-----------+
+
+signal_type: 'offer', 'answer', 'ice-candidate', 'end-call'
+status: 'calling', 'active', 'ended', 'declined', 'missed'
+RLS: Both caller and receiver can read/write
+Realtime enabled for instant signal delivery
+```
+
+### Messages table update
+- `location_lat` column (double precision, nullable)
+- `location_lng` column (double precision, nullable)  
+- `location_address` column (text, nullable)
+
+## Implementation Steps
+
+### Step 1: Database Migration
+- Create `call_signals` table with RLS
+- Add location columns to `messages` table
+- Enable realtime on `call_signals`
+
+### Step 2: WebRTC Hook
+New file: `src/hooks/useVoiceCall.ts`
+- WebRTC peer connection setup
+- Signaling via Supabase Realtime (subscribe to call_signals changes)
+- Handle offer/answer/ICE candidate exchange
+- Microphone access
+- Mute/unmute, speaker toggle
+- Call duration timer
+- Cleanup on disconnect
+
+### Step 3: Call UI Components
+New file: `src/components/VoiceCallScreen.tsx`
+- Full screen overlay for call
+- Outgoing call view (calling animation)
+- Incoming call view (accept/decline)
+- Active call view (timer, mute, speaker, end)
+- Ringtone audio playback
+
+### Step 4: Incoming Call Listener
+New file: `src/components/IncomingCallProvider.tsx`
+- Global listener for incoming calls
+- Shows incoming call screen anywhere in app
+- Uses Supabase Realtime subscription on call_signals
+
+### Step 5: Location Message Component
+New file: `src/components/LocationMessage.tsx`
+- Map preview using static OpenStreetMap tile image
+- Address display
+- Click to open Google Maps
+
+### Step 6: Update ChatWindow Header
+Modify: `src/components/ChatWindow.tsx`
+- Add Phone icon button in header (between friend name and gallery icon)
+- Add location option in attachment/input area
+- Render LocationMessage for messages with coordinates
+
+### Step 7: Update Chat Page
+Modify: `src/pages/Chat.tsx`
+- Add VoiceCallScreen component
+- Handle call initiation
+- Handle location send function
+- Pass location data to message sending
+
+### Step 8: Update Message Sending
+Modify: `src/pages/Chat.tsx`
+- New `handleSendLocation` function
+- Get GPS coordinates via `navigator.geolocation`
+- Insert message with lat/lng/address columns
 
 ---
 
 ## Technical Details
 
-### Database Migration
-```sql
--- Add custom_image_url column to chat_themes
-ALTER TABLE chat_themes 
-ADD COLUMN custom_image_url TEXT;
-```
-
-### Storage Bucket
-```sql
--- Create chat-wallpapers bucket
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('chat-wallpapers', 'chat-wallpapers', true);
-```
+### Files to Create
+1. `src/hooks/useVoiceCall.ts` - WebRTC + signaling logic
+2. `src/components/VoiceCallScreen.tsx` - Call UI (outgoing/incoming/active)
+3. `src/components/IncomingCallProvider.tsx` - Global incoming call listener
+4. `src/components/LocationMessage.tsx` - Location message bubble with map
 
 ### Files to Modify
+1. `src/components/ChatWindow.tsx` - Phone icon in header + location button + LocationMessage rendering
+2. `src/pages/Chat.tsx` - Call handlers + location send
+3. `src/App.tsx` - Wrap with IncomingCallProvider
+4. `src/index.css` - Call screen animations (pulse ring, etc.)
 
-1. **src/styles/chatThemes.ts**
-   - Remove all animated themes (love, galaxy, ocean, sky, neon, sunset, forest, celebration)
-   - Add `custom` theme type for user-uploaded images
-   - Update ChatTheme interface to support `customImageUrl`
+### WebRTC Configuration
+- STUN servers: Google public STUN servers (free)
+- No TURN server needed for most cases (direct peer-to-peer)
+- Audio only (no video)
 
-2. **src/hooks/useChatTheme.ts**
-   - Fetch `custom_image_url` along with `theme_key`
-   - Add `setCustomImage` function for uploading/saving custom wallpaper
-   - Update return type to include `customImageUrl`
-
-3. **src/components/ChatThemeSelector.tsx**
-   - Remove animated theme previews
-   - Add "Gallery" button with image picker
-   - Show current custom image if set
-   - Handle image selection and upload
-
-4. **src/components/ChatThemeBackground.tsx**
-   - Remove all animation rendering code
-   - Add support for `customImageUrl` prop
-   - Render full-screen background image with `object-cover`
-
-5. **src/components/ChatProfileDrawer.tsx**
-   - Pass `customImageUrl` to ChatThemeSelector
-   - Handle custom image selection callback
-
-6. **src/components/ChatWindow.tsx**
-   - Pass `customImageUrl` from theme hook to ChatThemeBackground
-
-7. **src/index.css**
-   - Remove all theme animation CSS (floating-hearts, twinkling-stars, etc.)
-   - Keep only essential styles
-
-### Updated Theme Options
+### Header Layout (Instagram style)
 ```text
-Themes available:
-1. Default - transparent (app default)
-2. Minimal Light - soft gray gradient
-3. Minimal Dark - dark gradient
-4. Custom Image - user ki apni image
+[<Back] [Avatar] [Name + Status] ............. [Phone] [Gallery] [Menu]
 ```
 
-### Image Handling
-- Image upload to Supabase Storage `chat-wallpapers` bucket
-- Image displayed with `object-fit: cover` to fill screen like reference
-- Image positioned behind messages with `z-index: 0`
-- Messages remain readable on top
+Phone icon position: Right side, before the gallery button - exactly like Instagram.
 
-### Result Preview
-Reference image jaisa result milega:
-- Full screen custom wallpaper
-- Messages clearly visible upar
-- Header aur input bar unchanged
-- No animations, clean static background
+### Location in Input Area
+- New MapPin icon button next to image attachment
+- Or inside the attachment dropdown menu
+
+### Call Notification
+- Push notification sent to receiver when call starts
+- Ringtone plays on incoming call screen
+- 30 second timeout - if no answer, call marked as "missed"
