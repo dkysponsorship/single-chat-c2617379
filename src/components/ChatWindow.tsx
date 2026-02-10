@@ -327,6 +327,11 @@ export const ChatWindow = ({
           </ChatProfileDrawer>
         </div>
         <div className="flex gap-1">
+          {onStartCall && (
+            <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
+              <Phone className="w-4 h-4" />
+            </Button>
+          )}
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
