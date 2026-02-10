@@ -51,6 +51,9 @@ export interface Message {
   replyTo?: string;
   repliedMessage?: Message;
   readAt?: Date | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  locationAddress?: string | null;
 }
 interface ChatWindowProps {
   friend: Friend;
