@@ -89,7 +89,9 @@ export const ChatWindow = ({
   onBack,
   onLogout,
   currentUserName,
-  onInputChange
+  onInputChange,
+  onStartCall,
+  onSendLocation,
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
