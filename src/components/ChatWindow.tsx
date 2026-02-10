@@ -493,7 +493,14 @@ export const ChatWindow = ({
                             </Button>
                           </div>
                         </div> : <>
-                          {message.imageUrl ? <div className="flex flex-col gap-2">
+                          {message.locationLat != null && message.locationLng != null ? (
+                            <LocationMessage
+                              lat={message.locationLat}
+                              lng={message.locationLng}
+                              address={message.locationAddress || undefined}
+                              isOwn={message.isOwn}
+                            />
+                          ) : message.imageUrl ? <div className="flex flex-col gap-2">
                               <img src={message.imageUrl} alt="Shared image" className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer" onClick={() => setViewingImage(message.imageUrl!)} />
                               {message.text !== '📷 Photo' && <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>}
                             </div> : <>
