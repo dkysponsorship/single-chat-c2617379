@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { sendPushNotification } from "@/services/pushNotifications";
+import { useVoiceCall } from "@/hooks/useVoiceCall";
+import { VoiceCallScreen } from "@/components/VoiceCallScreen";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
