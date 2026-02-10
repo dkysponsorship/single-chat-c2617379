@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LogOut } from "lucide-react";
@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { sendPushNotification } from "@/services/pushNotifications";
+import { useVoiceCall } from "@/hooks/useVoiceCall";
+import { VoiceCallScreen } from "@/components/VoiceCallScreen";
 
 const Chat = () => {
   const { friendId } = useParams<{ friendId: string }>();
@@ -35,6 +37,13 @@ const Chat = () => {
   
   const chatId = currentUser && friendId ? createChatId(currentUser.id, friendId) : '';
   const { friendTyping, handleInputChange, stopTyping } = useTypingIndicator(chatId, currentUser?.id || null);
+  
+  // Voice call hook
+  const voiceCall = useVoiceCall({
+    currentUserId: currentUser?.id || '',
+    friendId: friendId || '',
+    chatId,
+  });
 
   useEffect(() => {
     const initChat = async () => {
@@ -393,6 +402,63 @@ const Chat = () => {
     navigate("/home");
   };
 
+  // Handle sending location
+  const handleSendLocation = useCallback(async () => {
+    if (!currentUser || !friendId) return;
+    
+    if (!navigator.geolocation) {
+      toast({ title: "Location not supported", description: "Your browser doesn't support location.", variant: "destructive" });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const chatId = createChatId(currentUser.id, friendId);
+        
+        // Try reverse geocoding
+        let address = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await res.json();
+          if (data.display_name) address = data.display_name.slice(0, 100);
+        } catch {}
+
+        const { error } = await supabase.from("messages").insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content: `📍 Location`,
+          location_lat: latitude,
+          location_lng: longitude,
+          location_address: address,
+        } as any);
+
+        if (error) {
+          toast({ title: "Failed to send location", variant: "destructive" });
+        } else {
+          sendPushNotification({
+            recipientUserId: friendId,
+            title: currentUser.displayName,
+            body: '📍 Location shared',
+            data: { chatId, senderId: currentUser.id },
+          }).catch(() => {});
+        }
+      },
+      () => {
+        toast({ title: "Location access denied", description: "Please allow location access.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true }
+    );
+  }, [currentUser, friendId, toast]);
+
+  // Handle accepting incoming call
+  const handleAcceptCall = useCallback(async () => {
+    const offerData = await voiceCall.getIncomingCallOffer();
+    if (offerData) {
+      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit);
+    }
+  }, [voiceCall]);
+
   const handleLogout = async () => {
     await logoutUser();
     sessionStorage.removeItem("currentUser");
@@ -436,6 +502,9 @@ const Chat = () => {
       isEdited: msg.is_edited,
       replyTo: msg.reply_to,
       readAt: msg.read_at ? new Date(msg.read_at) : null,
+      locationLat: msg.location_lat,
+      locationLng: msg.location_lng,
+      locationAddress: msg.location_address,
       repliedMessage: repliedMessage ? {
         id: repliedMessage.id,
         text: repliedMessage.content,
@@ -478,8 +547,25 @@ const Chat = () => {
           onSendVoice={handleSendVoice}
           onSendImage={handleSendImage}
           onInputChange={handleInputChange}
+          onStartCall={friendId !== AI_FRIEND_ID ? voiceCall.startCall : undefined}
+          onSendLocation={friendId !== AI_FRIEND_ID ? handleSendLocation : undefined}
         />
       </div>
+      
+      {/* Voice Call Screen */}
+      <VoiceCallScreen
+        callState={voiceCall.callState}
+        friendName={friend.displayName}
+        friendAvatar={friend.avatar}
+        callDuration={voiceCall.callDuration}
+        isMuted={voiceCall.isMuted}
+        isSpeaker={voiceCall.isSpeaker}
+        onAccept={handleAcceptCall}
+        onDecline={() => voiceCall.callSignalId && voiceCall.declineCall(voiceCall.callSignalId)}
+        onEnd={() => voiceCall.endCall()}
+        onToggleMute={voiceCall.toggleMute}
+        onToggleSpeaker={voiceCall.toggleSpeaker}
+      />
     </div>
   );
 };

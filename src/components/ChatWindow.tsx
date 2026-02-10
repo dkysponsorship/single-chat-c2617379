@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, MapPin } from "lucide-react";
 import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
 import { ChatProfileDrawer } from "@/components/ChatProfileDrawer";
@@ -38,6 +38,7 @@ import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { ImageViewer } from "./ImageViewer";
 import { useToast } from "@/hooks/use-toast";
+import { LocationMessage } from "@/components/LocationMessage";
 export interface Message {
   id: string;
   text: string;
@@ -50,6 +51,9 @@ export interface Message {
   replyTo?: string;
   repliedMessage?: Message;
   readAt?: Date | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  locationAddress?: string | null;
 }
 interface ChatWindowProps {
   friend: Friend;
@@ -67,6 +71,8 @@ interface ChatWindowProps {
   onLogout?: () => void;
   currentUserName?: string;
   onInputChange?: () => void;
+  onStartCall?: () => void;
+  onSendLocation?: () => void;
 }
 export const ChatWindow = ({
   friend,
@@ -83,7 +89,9 @@ export const ChatWindow = ({
   onBack,
   onLogout,
   currentUserName,
-  onInputChange
+  onInputChange,
+  onStartCall,
+  onSendLocation,
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -319,6 +327,11 @@ export const ChatWindow = ({
           </ChatProfileDrawer>
         </div>
         <div className="flex gap-1">
+          {onStartCall && (
+            <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
+              <Phone className="w-4 h-4" />
+            </Button>
+          )}
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
@@ -480,7 +493,14 @@ export const ChatWindow = ({
                             </Button>
                           </div>
                         </div> : <>
-                          {message.imageUrl ? <div className="flex flex-col gap-2">
+                          {message.locationLat != null && message.locationLng != null ? (
+                            <LocationMessage
+                              lat={message.locationLat}
+                              lng={message.locationLng}
+                              address={message.locationAddress || undefined}
+                              isOwn={message.isOwn}
+                            />
+                          ) : message.imageUrl ? <div className="flex flex-col gap-2">
                               <img src={message.imageUrl} alt="Shared image" className="rounded-lg max-w-full w-auto max-h-[300px] object-contain cursor-pointer" onClick={() => setViewingImage(message.imageUrl!)} />
                               {message.text !== '📷 Photo' && <p className="text-sm leading-relaxed">{renderMessageText(message.text)}</p>}
                             </div> : <>
@@ -593,8 +613,11 @@ export const ChatWindow = ({
           </div>}
         <form onSubmit={handleSend} className="flex gap-2">
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-          {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
+           {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
               <ImageIcon className="w-4 h-4" />
+            </Button>}
+          {onSendLocation && <Button type="button" size="sm" variant="ghost" onClick={onSendLocation} className="h-10">
+              <MapPin className="w-4 h-4" />
             </Button>}
           <Input value={newMessage} onChange={e => {
             setNewMessage(e.target.value);

@@ -253,4 +253,29 @@ body {
       transform: translate3d(0, -1px, 0);
     }
   }
+
+  @keyframes callPulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 30px rgba(255, 255, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+  }
+
+  @keyframes callButtonBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+}
+
+.call-pulse-ring {
+  animation: callPulse 1.5s ease-out infinite;
+}
+
+.call-button-bounce {
+  animation: callButtonBounce 2s ease-in-out infinite;
 }
