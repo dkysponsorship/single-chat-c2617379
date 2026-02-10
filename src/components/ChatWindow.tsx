@@ -38,6 +38,7 @@ import { Friend } from "./FriendList";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { ImageViewer } from "./ImageViewer";
 import { useToast } from "@/hooks/use-toast";
+import { LocationMessage } from "@/components/LocationMessage";
 export interface Message {
   id: string;
   text: string;
