@@ -606,8 +606,11 @@ export const ChatWindow = ({
           </div>}
         <form onSubmit={handleSend} className="flex gap-2">
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
-          {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
+           {onSendImage && <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()} className="h-10">
               <ImageIcon className="w-4 h-4" />
+            </Button>}
+          {onSendLocation && <Button type="button" size="sm" variant="ghost" onClick={onSendLocation} className="h-10">
+              <MapPin className="w-4 h-4" />
             </Button>}
           <Input value={newMessage} onChange={e => {
             setNewMessage(e.target.value);
