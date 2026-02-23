@@ -8,7 +8,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, MapPin } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, Video, MapPin } from "lucide-react";
 import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
 import { ChatProfileDrawer } from "@/components/ChatProfileDrawer";
