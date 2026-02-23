@@ -8,7 +8,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, C
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, MapPin } from "lucide-react";
+import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, Video, MapPin } from "lucide-react";
 import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
 import { useMessageReactions } from "@/hooks/useMessageReactions";
 import { ChatProfileDrawer } from "@/components/ChatProfileDrawer";
@@ -323,14 +323,49 @@ export const ChatWindow = ({
             </PopoverTrigger>
             <PopoverContent align="start" className="w-48 p-1">
               {onStartCall && (
-                <button
-                  onClick={onStartCall}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                  <span>Voice Call</span>
-                </button>
+                <>
+                  <button
+                    onClick={onStartCall}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>Voice Call</span>
+                  </button>
+                  <button
+                    onClick={onStartCall}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span>Video Call</span>
+                  </button>
+                </>
               )}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button
+                    disabled={imageMessages.length === 0}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Images className="w-4 h-4" />
+                    <span>Shared Photos</span>
+                  </button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-lg pt-safe">
+                  <SheetHeader>
+                    <SheetTitle>Shared Photos</SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-100px-env(safe-area-inset-top))] mt-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      {imageMessages.map(msg => <div key={msg.id} className="relative group">
+                          <img src={msg.imageUrl} alt="Shared" className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(msg.imageUrl!)} />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
+                            <p className="text-white text-xs truncate">{msg.text !== '📷 Photo' ? msg.text : formatTime(msg.timestamp)}</p>
+                          </div>
+                        </div>)}
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
               <ChatProfileDrawer
                 friend={friend}
                 currentTheme={currentTheme}
@@ -351,30 +386,7 @@ export const ChatWindow = ({
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
               </span>
-              
             </div>}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" disabled={imageMessages.length === 0} className="h-8 w-8 p-0">
-                <Images className="w-4 h-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-lg pt-safe">
-              <SheetHeader>
-                <SheetTitle>Shared Photos</SheetTitle>
-              </SheetHeader>
-              <ScrollArea className="h-[calc(100vh-100px-env(safe-area-inset-top))] mt-4">
-                <div className="grid grid-cols-2 gap-2">
-                  {imageMessages.map(msg => <div key={msg.id} className="relative group">
-                      <img src={msg.imageUrl} alt="Shared" className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(msg.imageUrl!)} />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
-                        <p className="text-white text-xs truncate">{msg.text !== '📷 Photo' ? msg.text : formatTime(msg.timestamp)}</p>
-                      </div>
-                    </div>)}
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
