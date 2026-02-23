@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from "@/components/ui/context-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, MoreVertical, Trash2, Edit2, Check, X, Image as ImageIcon, Link2, Images, Reply, XCircle, Play, Pause, ArrowLeft, LogOut, CheckCheck, SmilePlus, Phone, MapPin } from "lucide-react";
 import { MessageReactions, ReactionPicker } from "@/components/MessageReactions";
@@ -300,38 +301,52 @@ export const ChatWindow = ({
           {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-6 w-4 p-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>}
-          <ChatProfileDrawer
-            friend={friend}
-            currentTheme={currentTheme}
-            customImageUrl={customImageUrl}
-            onSelectTheme={setTheme}
-            onSelectCustomImage={setCustomImage}
-          >
-            <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="relative">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={friend.avatar} alt={friend.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                    {friend.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-[hsl(var(--online-status))]" : "bg-muted")} />
-              </div>
-              <div className="text-left">
-                <h3 className="font-semibold">{friend.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {friend.isOnline ? "Online" : "Offline"}
-                </p>
-              </div>
-            </button>
-          </ChatProfileDrawer>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="relative">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={friend.avatar} alt={friend.name} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                      {friend.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-[hsl(var(--online-status))]" : "bg-muted")} />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-semibold">{friend.name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {friend.isOnline ? "Online" : "Offline"}
+                  </p>
+                </div>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-48 p-1">
+              {onStartCall && (
+                <button
+                  onClick={onStartCall}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>Voice Call</span>
+                </button>
+              )}
+              <ChatProfileDrawer
+                friend={friend}
+                currentTheme={currentTheme}
+                customImageUrl={customImageUrl}
+                onSelectTheme={setTheme}
+                onSelectCustomImage={setCustomImage}
+              >
+                <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>View Profile</span>
+                </button>
+              </ChatProfileDrawer>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex gap-1">
-          {onStartCall && (
-            <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
-              <Phone className="w-4 h-4" />
-            </Button>
-          )}
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
