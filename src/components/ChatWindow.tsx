@@ -301,92 +301,67 @@ export const ChatWindow = ({
           {onBack && <Button variant="ghost" size="sm" onClick={onBack} className="h-6 w-4 p-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <div className="relative">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={friend.avatar} alt={friend.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                      {friend.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-[hsl(var(--online-status))]" : "bg-muted")} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">{friend.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {friend.isOnline ? "Online" : "Offline"}
-                  </p>
-                </div>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-48 p-1">
-              {onStartCall && (
-                <>
-                  <button
-                    onClick={onStartCall}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
-                  >
-                    <Phone className="w-4 h-4" />
-                    <span>Voice Call</span>
-                  </button>
-                  <button
-                    onClick={onStartCall}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors"
-                  >
-                    <Video className="w-4 h-4" />
-                    <span>Video Call</span>
-                  </button>
-                </>
-              )}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <button
-                    disabled={imageMessages.length === 0}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Images className="w-4 h-4" />
-                    <span>Shared Photos</span>
-                  </button>
-                </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-lg pt-safe">
-                  <SheetHeader>
-                    <SheetTitle>Shared Photos</SheetTitle>
-                  </SheetHeader>
-                  <ScrollArea className="h-[calc(100vh-100px-env(safe-area-inset-top))] mt-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      {imageMessages.map(msg => <div key={msg.id} className="relative group">
-                          <img src={msg.imageUrl} alt="Shared" className="w-full h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(msg.imageUrl!)} />
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
-                            <p className="text-white text-xs truncate">{msg.text !== '📷 Photo' ? msg.text : formatTime(msg.timestamp)}</p>
-                          </div>
-                        </div>)}
-                    </div>
-                  </ScrollArea>
-                </SheetContent>
-              </Sheet>
-              <ChatProfileDrawer
-                friend={friend}
-                currentTheme={currentTheme}
-                customImageUrl={customImageUrl}
-                onSelectTheme={setTheme}
-                onSelectCustomImage={setCustomImage}
-              >
-                <button className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm hover:bg-accent transition-colors">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>View Profile</span>
-                </button>
-              </ChatProfileDrawer>
-            </PopoverContent>
-          </Popover>
+          <ChatProfileDrawer
+            friend={friend}
+            currentTheme={currentTheme}
+            customImageUrl={customImageUrl}
+            onSelectTheme={setTheme}
+            onSelectCustomImage={setCustomImage}
+          >
+            <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="relative">
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={friend.avatar} alt={friend.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                    {friend.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={cn("absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background", friend.isOnline ? "bg-[hsl(var(--online-status))]" : "bg-muted")} />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">{friend.name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {friend.isOnline ? "Online" : "Offline"}
+                </p>
+              </div>
+            </button>
+          </ChatProfileDrawer>
         </div>
         <div className="flex gap-1">
+          {onStartCall && (
+            <>
+              <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
+                <Phone className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
+                <Video className="w-4 h-4" />
+              </Button>
+            </>
+          )}
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
               <span className="text-sm text-muted-foreground hidden sm:block">
                 {currentUserName}
               </span>
             </div>}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={imageMessages.length === 0} className="h-8 w-8 p-0">
+                <Images className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-2">
+              <h4 className="text-sm font-semibold mb-2 px-1">Shared Photos</h4>
+              <ScrollArea className="max-h-80">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {imageMessages.map(msg => (
+                    <div key={msg.id} className="relative group">
+                      <img src={msg.imageUrl} alt="Shared" className="w-full h-28 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewingImage(msg.imageUrl!)} />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
