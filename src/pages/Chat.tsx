@@ -557,16 +557,21 @@ const Chat = () => {
       {/* Voice Call Screen */}
       <VoiceCallScreen
         callState={voiceCall.callState}
+        callType={voiceCall.callType}
         friendName={friend.displayName}
         friendAvatar={friend.avatar}
         callDuration={voiceCall.callDuration}
         isMuted={voiceCall.isMuted}
         isSpeaker={voiceCall.isSpeaker}
+        isCameraOff={voiceCall.isCameraOff}
+        localStream={voiceCall.localStream}
+        remoteStream={voiceCall.remoteStream}
         onAccept={handleAcceptCall}
         onDecline={() => voiceCall.callSignalId && voiceCall.declineCall(voiceCall.callSignalId)}
         onEnd={() => voiceCall.endCall()}
         onToggleMute={voiceCall.toggleMute}
         onToggleSpeaker={voiceCall.toggleSpeaker}
+        onToggleCamera={voiceCall.toggleCamera}
       />
     </div>
   );
