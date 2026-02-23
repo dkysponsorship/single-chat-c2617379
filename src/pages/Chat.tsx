@@ -455,7 +455,8 @@ const Chat = () => {
   const handleAcceptCall = useCallback(async () => {
     const offerData = await voiceCall.getIncomingCallOffer();
     if (offerData) {
-      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit);
+      const incomingCallType = (offerData.signal_data as any)?.callType || "voice";
+      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit, incomingCallType);
     }
   }, [voiceCall]);
 
@@ -547,7 +548,8 @@ const Chat = () => {
           onSendVoice={handleSendVoice}
           onSendImage={handleSendImage}
           onInputChange={handleInputChange}
-          onStartCall={friendId !== AI_FRIEND_ID ? voiceCall.startCall : undefined}
+          onStartCall={friendId !== AI_FRIEND_ID ? () => voiceCall.startCall("voice") : undefined}
+          onStartVideoCall={friendId !== AI_FRIEND_ID ? () => voiceCall.startCall("video") : undefined}
           onSendLocation={friendId !== AI_FRIEND_ID ? handleSendLocation : undefined}
         />
       </div>
@@ -555,16 +557,21 @@ const Chat = () => {
       {/* Voice Call Screen */}
       <VoiceCallScreen
         callState={voiceCall.callState}
+        callType={voiceCall.callType}
         friendName={friend.displayName}
         friendAvatar={friend.avatar}
         callDuration={voiceCall.callDuration}
         isMuted={voiceCall.isMuted}
         isSpeaker={voiceCall.isSpeaker}
+        isCameraOff={voiceCall.isCameraOff}
+        localStream={voiceCall.localStream}
+        remoteStream={voiceCall.remoteStream}
         onAccept={handleAcceptCall}
         onDecline={() => voiceCall.callSignalId && voiceCall.declineCall(voiceCall.callSignalId)}
         onEnd={() => voiceCall.endCall()}
         onToggleMute={voiceCall.toggleMute}
         onToggleSpeaker={voiceCall.toggleSpeaker}
+        onToggleCamera={voiceCall.toggleCamera}
       />
     </div>
   );
