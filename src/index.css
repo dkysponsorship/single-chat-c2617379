@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mirror video for self-view */
+.mirror-video {
+  transform: scaleX(-1);
+}
+
 /* Chat Theme - Custom Background Support */
 .chat-theme-bg {
   position: absolute;
