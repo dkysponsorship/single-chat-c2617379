@@ -335,9 +335,11 @@ export const ChatWindow = ({
               <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
                 <Phone className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={onStartCall} className="h-8 w-8 p-0">
-                <Video className="w-4 h-4" />
-              </Button>
+              {onStartVideoCall && (
+                <Button variant="ghost" size="sm" onClick={onStartVideoCall} className="h-8 w-8 p-0">
+                  <Video className="w-4 h-4" />
+                </Button>
+              )}
             </>
           )}
           {onLogout && currentUserName && <div className="flex items-center gap-2 mr-2">
