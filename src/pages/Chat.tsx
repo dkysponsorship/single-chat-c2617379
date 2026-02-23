@@ -455,7 +455,8 @@ const Chat = () => {
   const handleAcceptCall = useCallback(async () => {
     const offerData = await voiceCall.getIncomingCallOffer();
     if (offerData) {
-      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit);
+      const incomingCallType = (offerData.signal_data as any)?.callType || "voice";
+      voiceCall.acceptCall(offerData.id, offerData.signal_data as RTCSessionDescriptionInit, incomingCallType);
     }
   }, [voiceCall]);
 
