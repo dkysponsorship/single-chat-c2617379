@@ -547,7 +547,8 @@ const Chat = () => {
           onSendVoice={handleSendVoice}
           onSendImage={handleSendImage}
           onInputChange={handleInputChange}
-          onStartCall={friendId !== AI_FRIEND_ID ? voiceCall.startCall : undefined}
+          onStartCall={friendId !== AI_FRIEND_ID ? () => voiceCall.startCall("voice") : undefined}
+          onStartVideoCall={friendId !== AI_FRIEND_ID ? () => voiceCall.startCall("video") : undefined}
           onSendLocation={friendId !== AI_FRIEND_ID ? handleSendLocation : undefined}
         />
       </div>
