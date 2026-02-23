@@ -73,6 +73,7 @@ interface ChatWindowProps {
   currentUserName?: string;
   onInputChange?: () => void;
   onStartCall?: () => void;
+  onStartVideoCall?: () => void;
   onSendLocation?: () => void;
 }
 export const ChatWindow = ({
