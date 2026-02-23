@@ -9,6 +9,7 @@ const ICE_SERVERS = {
 };
 
 export type CallState = "idle" | "calling" | "incoming" | "active" | "ended";
+export type CallType = "voice" | "video";
 
 interface UseVoiceCallProps {
   currentUserId: string;
@@ -18,16 +19,22 @@ interface UseVoiceCallProps {
 
 export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallProps) => {
   const [callState, setCallState] = useState<CallState>("idle");
+  const [callType, setCallType] = useState<CallType>("voice");
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [callSignalId, setCallSignalId] = useState<string | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callTypeRef = useRef<CallType>("voice");
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -44,9 +51,13 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       localStreamRef.current = null;
     }
 
+    setLocalStream(null);
+    setRemoteStream(null);
+    remoteStreamRef.current = null;
     setCallDuration(0);
     setIsMuted(false);
     setIsSpeaker(false);
+    setIsCameraOff(false);
     setCallSignalId(null);
   }, []);
 
@@ -54,7 +65,7 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     const pc = new RTCPeerConnection(ICE_SERVERS);
 
     pc.onicecandidate = async (event) => {
-      if (event.candidate && callSignalId) {
+      if (event.candidate) {
         await supabase.from("call_signals").insert({
           chat_id: chatId,
           caller_id: currentUserId,
@@ -67,22 +78,38 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     };
 
     pc.ontrack = (event) => {
-      if (!remoteAudioRef.current) {
-        remoteAudioRef.current = new Audio();
-        remoteAudioRef.current.autoplay = true;
+      const stream = event.streams[0];
+      remoteStreamRef.current = stream;
+      setRemoteStream(stream);
+      
+      // For voice-only, also set audio element
+      if (callTypeRef.current === "voice") {
+        if (!remoteAudioRef.current) {
+          remoteAudioRef.current = new Audio();
+          remoteAudioRef.current.autoplay = true;
+        }
+        remoteAudioRef.current.srcObject = stream;
       }
-      remoteAudioRef.current.srcObject = event.streams[0];
     };
 
     peerConnectionRef.current = pc;
     return pc;
-  }, [chatId, currentUserId, friendId, callSignalId]);
+  }, [chatId, currentUserId, friendId]);
 
-  // Start a call
-  const startCall = useCallback(async () => {
+  // Start a call (voice or video)
+  const startCall = useCallback(async (type: CallType = "voice") => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      callTypeRef.current = type;
+      setCallType(type);
+
+      const constraints: MediaStreamConstraints = {
+        audio: true,
+        video: type === "video" ? { facingMode: "user", width: 640, height: 480 } : false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
+      setLocalStream(stream);
 
       const pc = createPeerConnection();
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -95,7 +122,7 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
         caller_id: currentUserId,
         receiver_id: friendId,
         signal_type: "offer",
-        signal_data: { sdp: offer.sdp, type: offer.type },
+        signal_data: { sdp: offer.sdp, type: offer.type, callType: type },
         status: "calling",
       } as any).select().single();
 
@@ -106,22 +133,29 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
 
       // 30s timeout
       timeoutRef.current = setTimeout(async () => {
-        if (callState === "calling") {
-          await endCall("missed");
-        }
+        await endCall("missed");
       }, 30000);
     } catch (err) {
       console.error("Error starting call:", err);
       cleanup();
       setCallState("idle");
     }
-  }, [chatId, currentUserId, friendId, createPeerConnection, cleanup, callState]);
+  }, [chatId, currentUserId, friendId, createPeerConnection, cleanup]);
 
   // Accept incoming call
-  const acceptCall = useCallback(async (signalId: string, offerSdp: RTCSessionDescriptionInit) => {
+  const acceptCall = useCallback(async (signalId: string, offerSdp: RTCSessionDescriptionInit, incomingCallType: CallType = "voice") => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      callTypeRef.current = incomingCallType;
+      setCallType(incomingCallType);
+
+      const constraints: MediaStreamConstraints = {
+        audio: true,
+        video: incomingCallType === "video" ? { facingMode: "user", width: 640, height: 480 } : false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
+      setLocalStream(stream);
 
       const pc = createPeerConnection();
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -169,7 +203,6 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       await supabase.from("call_signals").update({ status }).eq("id", callSignalId);
     }
     
-    // Also send end-call signal
     await supabase.from("call_signals").insert({
       chat_id: chatId,
       caller_id: currentUserId,
@@ -194,15 +227,20 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     }
   }, []);
 
+  // Toggle camera
+  const toggleCamera = useCallback(() => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsCameraOff(!videoTrack.enabled);
+      }
+    }
+  }, []);
+
   // Toggle speaker
   const toggleSpeaker = useCallback(() => {
     setIsSpeaker(prev => !prev);
-    if (remoteAudioRef.current) {
-      // @ts-ignore - setSinkId is not in all browsers
-      if (remoteAudioRef.current.setSinkId) {
-        // Toggle between default and speaker
-      }
-    }
   }, []);
 
   // Listen for realtime signals
@@ -223,6 +261,9 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
           const signal = payload.new;
 
           if (signal.signal_type === "offer" && callState === "idle") {
+            const incomingType = signal.signal_data?.callType || "voice";
+            callTypeRef.current = incomingType;
+            setCallType(incomingType);
             setCallSignalId(signal.id);
             setCallState("incoming");
           }
@@ -305,15 +346,20 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
 
   return {
     callState,
+    callType,
     isMuted,
     isSpeaker,
+    isCameraOff,
     callDuration,
     callSignalId,
+    localStream,
+    remoteStream,
     startCall,
     acceptCall,
     declineCall,
     endCall,
     toggleMute,
+    toggleCamera,
     toggleSpeaker,
     getIncomingCallOffer,
   };
