@@ -93,6 +93,7 @@ export const ChatWindow = ({
   currentUserName,
   onInputChange,
   onStartCall,
+  onStartVideoCall,
   onSendLocation,
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
