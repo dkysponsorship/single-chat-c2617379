@@ -615,12 +615,26 @@ const Chat = () => {
         isCameraOff={voiceCall.isCameraOff}
         localStream={voiceCall.localStream}
         remoteStream={voiceCall.remoteStream}
+        isScreenSharing={voiceCall.isScreenSharing}
         onAccept={handleAcceptCall}
-        onDecline={() => voiceCall.callSignalId && voiceCall.declineCall(voiceCall.callSignalId)}
-        onEnd={() => voiceCall.endCall()}
+        onDecline={() => {
+          if (voiceCall.callSignalId) {
+            voiceCall.declineCall(voiceCall.callSignalId);
+            // Insert declined message
+            if (currentUser && friendId) {
+              const cid = createChatId(currentUser.id, friendId);
+              const icon = voiceCall.callType === "video" ? "📹" : "📞";
+              const label = voiceCall.callType === "video" ? "Declined video call" : "Declined voice call";
+              supabase.from("messages").insert({ chat_id: cid, sender_id: currentUser.id, content: `${icon} ${label}` });
+            }
+          }
+        }}
+        onEnd={() => handleEndCall()}
         onToggleMute={voiceCall.toggleMute}
         onToggleSpeaker={voiceCall.toggleSpeaker}
         onToggleCamera={voiceCall.toggleCamera}
+        onFlipCamera={voiceCall.flipCamera}
+        onToggleScreenShare={voiceCall.toggleScreenShare}
       />
     </div>
   );
