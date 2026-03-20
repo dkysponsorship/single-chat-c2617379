@@ -23,6 +23,7 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [callSignalId, setCallSignalId] = useState<string | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -35,6 +36,8 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callTypeRef = useRef<CallType>("voice");
+  const facingModeRef = useRef<"user" | "environment">("user");
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -51,6 +54,11 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       localStreamRef.current = null;
     }
 
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
+
     setLocalStream(null);
     setRemoteStream(null);
     remoteStreamRef.current = null;
@@ -58,7 +66,9 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     setIsMuted(false);
     setIsSpeaker(false);
     setIsCameraOff(false);
+    setIsScreenSharing(false);
     setCallSignalId(null);
+    facingModeRef.current = "user";
   }, []);
 
   const createPeerConnection = useCallback(() => {
@@ -82,7 +92,6 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       remoteStreamRef.current = stream;
       setRemoteStream(stream);
       
-      // For voice-only, also set audio element
       if (callTypeRef.current === "voice") {
         if (!remoteAudioRef.current) {
           remoteAudioRef.current = new Audio();
@@ -131,7 +140,6 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       setCallSignalId(data.id);
       setCallState("calling");
 
-      // 30s timeout
       timeoutRef.current = setTimeout(async () => {
         await endCall("missed");
       }, 30000);
@@ -173,13 +181,11 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
         status: "active",
       } as any);
 
-      // Update original call signal status
       await supabase.from("call_signals").update({ status: "active" }).eq("id", signalId);
 
       setCallSignalId(signalId);
       setCallState("active");
       
-      // Start timer
       callTimerRef.current = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
@@ -243,6 +249,121 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     setIsSpeaker(prev => !prev);
   }, []);
 
+  // Flip camera (front ↔ back)
+  const flipCamera = useCallback(async () => {
+    if (!localStreamRef.current || !peerConnectionRef.current) return;
+    
+    const newFacing = facingModeRef.current === "user" ? "environment" : "user";
+    
+    try {
+      // Get new stream with flipped camera
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newFacing, width: 640, height: 480 },
+        audio: false,
+      });
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
+
+      // Replace track on peer connection
+      const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === "video");
+      if (sender) {
+        await sender.replaceTrack(newVideoTrack);
+      }
+
+      // Replace track on local stream
+      if (oldVideoTrack) {
+        localStreamRef.current.removeTrack(oldVideoTrack);
+        oldVideoTrack.stop();
+      }
+      localStreamRef.current.addTrack(newVideoTrack);
+
+      facingModeRef.current = newFacing;
+      setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+    } catch (err) {
+      console.error("Error flipping camera:", err);
+    }
+  }, []);
+
+  // Toggle screen sharing
+  const toggleScreenShare = useCallback(async () => {
+    if (!peerConnectionRef.current || !localStreamRef.current) return;
+
+    if (isScreenSharing) {
+      // Stop screen share, revert to camera
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+        screenStreamRef.current = null;
+      }
+
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingModeRef.current, width: 640, height: 480 },
+          audio: false,
+        });
+        const camTrack = camStream.getVideoTracks()[0];
+        const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(camTrack);
+
+        const oldVideo = localStreamRef.current.getVideoTracks()[0];
+        if (oldVideo) {
+          localStreamRef.current.removeTrack(oldVideo);
+          oldVideo.stop();
+        }
+        localStreamRef.current.addTrack(camTrack);
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+      } catch (err) {
+        console.error("Error reverting to camera:", err);
+      }
+
+      setIsScreenSharing(false);
+    } else {
+      // Start screen share
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        screenStreamRef.current = screenStream;
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        const sender = peerConnectionRef.current.getSenders().find(s => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(screenTrack);
+
+        // Replace local stream video track for preview
+        const oldVideo = localStreamRef.current.getVideoTracks()[0];
+        if (oldVideo) {
+          localStreamRef.current.removeTrack(oldVideo);
+          // Don't stop old track - we may revert to it
+        }
+        localStreamRef.current.addTrack(screenTrack);
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+        setIsScreenSharing(true);
+
+        // When user stops sharing via browser UI
+        screenTrack.onended = async () => {
+          setIsScreenSharing(false);
+          screenStreamRef.current = null;
+          try {
+            const camStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: facingModeRef.current, width: 640, height: 480 },
+              audio: false,
+            });
+            const camTrack = camStream.getVideoTracks()[0];
+            const s = peerConnectionRef.current?.getSenders().find(s => s.track?.kind === "video");
+            if (s) await s.replaceTrack(camTrack);
+
+            if (localStreamRef.current) {
+              const old = localStreamRef.current.getVideoTracks()[0];
+              if (old) localStreamRef.current.removeTrack(old);
+              localStreamRef.current.addTrack(camTrack);
+              setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+            }
+          } catch {}
+        };
+      } catch (err) {
+        console.error("Error starting screen share:", err);
+      }
+    }
+  }, [isScreenSharing]);
+
   // Listen for realtime signals
   useEffect(() => {
     if (!currentUserId || !chatId) return;
@@ -297,7 +418,6 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
       )
       .subscribe();
 
-    // Also listen for updates (declined, ended)
     const updateChannel = supabase
       .channel(`call-update-${chatId}`)
       .on(
@@ -350,6 +470,7 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     isMuted,
     isSpeaker,
     isCameraOff,
+    isScreenSharing,
     callDuration,
     callSignalId,
     localStream,
@@ -361,6 +482,8 @@ export const useVoiceCall = ({ currentUserId, friendId, chatId }: UseVoiceCallPr
     toggleMute,
     toggleCamera,
     toggleSpeaker,
+    flipCamera,
+    toggleScreenShare,
     getIncomingCallOffer,
   };
 };

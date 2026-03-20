@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff, SwitchCamera, MonitorUp, Monitor } from "lucide-react";
 import { CallState, CallType } from "@/hooks/useVoiceCall";
 
 interface VoiceCallScreenProps {
@@ -12,6 +12,7 @@ interface VoiceCallScreenProps {
   isMuted: boolean;
   isSpeaker: boolean;
   isCameraOff: boolean;
+  isScreenSharing: boolean;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
   onAccept?: () => void;
@@ -20,6 +21,8 @@ interface VoiceCallScreenProps {
   onToggleMute: () => void;
   onToggleSpeaker: () => void;
   onToggleCamera: () => void;
+  onFlipCamera: () => void;
+  onToggleScreenShare: () => void;
 }
 
 const formatCallDuration = (seconds: number): string => {
@@ -37,6 +40,7 @@ export const VoiceCallScreen = ({
   isMuted,
   isSpeaker,
   isCameraOff,
+  isScreenSharing,
   localStream,
   remoteStream,
   onAccept,
@@ -45,10 +49,11 @@ export const VoiceCallScreen = ({
   onToggleMute,
   onToggleSpeaker,
   onToggleCamera,
+  onFlipCamera,
+  onToggleScreenShare,
 }: VoiceCallScreenProps) => {
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
 
-  // Use callback refs to immediately attach streams when elements mount
   const localVideoRef = useCallback((node: HTMLVideoElement | null) => {
     if (node && localStream) {
       node.srcObject = localStream;
@@ -102,7 +107,7 @@ export const VoiceCallScreen = ({
       {/* Local video preview (picture-in-picture style) */}
       {isVideoCall && callState === "active" && localStream && (
         <div className="absolute top-16 right-4 z-10 w-28 h-40 rounded-2xl overflow-hidden border-2 border-white/30 shadow-lg">
-          {isCameraOff ? (
+          {isCameraOff && !isScreenSharing ? (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <VideoOff className="w-6 h-6 text-muted-foreground" />
             </div>
@@ -112,7 +117,7 @@ export const VoiceCallScreen = ({
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover mirror-video"
+              className={`w-full h-full object-cover ${!isScreenSharing ? 'mirror-video' : ''}`}
             />
           )}
         </div>
@@ -154,7 +159,7 @@ export const VoiceCallScreen = ({
 
       {/* Middle - Call Controls (active only) */}
       {callState === "active" && (
-        <div className="flex gap-6 relative z-10 mb-8">
+        <div className="flex gap-4 relative z-10 mb-8 flex-wrap justify-center px-4">
           <button
             onClick={onToggleMute}
             className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
@@ -164,14 +169,30 @@ export const VoiceCallScreen = ({
             {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
           </button>
           {isVideoCall && (
-            <button
-              onClick={onToggleCamera}
-              className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                isCameraOff ? "bg-white text-black" : "bg-white/20 text-white"
-              }`}
-            >
-              {isCameraOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
-            </button>
+            <>
+              <button
+                onClick={onToggleCamera}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+                  isCameraOff ? "bg-white text-black" : "bg-white/20 text-white"
+                }`}
+              >
+                {isCameraOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+              </button>
+              <button
+                onClick={onFlipCamera}
+                className="w-14 h-14 rounded-full flex items-center justify-center bg-white/20 text-white transition-colors hover:bg-white/30"
+              >
+                <SwitchCamera className="w-6 h-6" />
+              </button>
+              <button
+                onClick={onToggleScreenShare}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+                  isScreenSharing ? "bg-white text-black" : "bg-white/20 text-white"
+                }`}
+              >
+                {isScreenSharing ? <MonitorUp className="w-6 h-6" /> : <Monitor className="w-6 h-6" />}
+              </button>
+            </>
           )}
           {!isVideoCall && (
             <button
