@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff } from "lucide-react";
 import { CallState, CallType } from "@/hooks/useVoiceCall";
@@ -47,8 +47,19 @@ export const VoiceCallScreen = ({
   onToggleCamera,
 }: VoiceCallScreenProps) => {
   const ringtoneRef = useRef<HTMLAudioElement | null>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Use callback refs to immediately attach streams when elements mount
+  const localVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && localStream) {
+      node.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  const remoteVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && remoteStream) {
+      node.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
 
   useEffect(() => {
     if (callState === "incoming" || callState === "calling") {
@@ -63,20 +74,6 @@ export const VoiceCallScreen = ({
       }
     };
   }, [callState]);
-
-  // Attach local video stream
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream]);
-
-  // Attach remote video stream
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
 
   if (callState === "idle" || callState === "ended") return null;
 
