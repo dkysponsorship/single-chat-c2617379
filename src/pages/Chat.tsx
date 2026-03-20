@@ -451,6 +451,55 @@ const Chat = () => {
     );
   }, [currentUser, friendId, toast]);
 
+  // Format call duration helper
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Handle ending call with summary message
+  const handleEndCall = useCallback(async (status: string = "ended") => {
+    if (!currentUser || !friendId) {
+      voiceCall.endCall(status);
+      return;
+    }
+
+    const duration = voiceCall.callDuration;
+    const type = voiceCall.callType;
+    const wasActive = voiceCall.callState === "active";
+
+    await voiceCall.endCall(status);
+
+    // Insert call summary message
+    const chatId = createChatId(currentUser.id, friendId);
+    let content: string;
+    
+    if (wasActive && duration > 0) {
+      const icon = type === "video" ? "📹" : "📞";
+      const label = type === "video" ? "Video call" : "Voice call";
+      content = `${icon} ${label} · ${formatDuration(duration)}`;
+    } else if (status === "missed") {
+      const icon = type === "video" ? "📹" : "📞";
+      const label = type === "video" ? "Missed video call" : "Missed voice call";
+      content = `${icon} ${label}`;
+    } else if (status === "declined") {
+      const icon = type === "video" ? "📹" : "📞";
+      const label = type === "video" ? "Declined video call" : "Declined voice call";
+      content = `${icon} ${label}`;
+    } else {
+      const icon = type === "video" ? "📹" : "📞";
+      const label = type === "video" ? "Video call" : "Voice call";
+      content = `${icon} ${label} ended`;
+    }
+
+    await supabase.from("messages").insert({
+      chat_id: chatId,
+      sender_id: currentUser.id,
+      content,
+    });
+  }, [currentUser, friendId, voiceCall]);
+
   // Handle accepting incoming call
   const handleAcceptCall = useCallback(async () => {
     const offerData = await voiceCall.getIncomingCallOffer();
