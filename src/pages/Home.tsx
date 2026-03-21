@@ -49,8 +49,11 @@ const Home = () => {
         }));
         setFriends(friendsData);
       });
+      // Load groups
+      const unsubGroups = getUserGroups(user.id, setGroups);
       return () => {
         if (unsubscribe) unsubscribe();
+        if (unsubGroups) unsubGroups();
       };
     };
     initPage();
