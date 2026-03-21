@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useAIFriendSetup } from "./AIFriendSetup";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogOut, MessageCircle, Home as HomeIcon, User as UserIcon, Bell, BellOff, Settings } from "lucide-react";
+import { LogOut, MessageCircle, Home as HomeIcon, User as UserIcon, Bell, BellOff, Users } from "lucide-react";
 import { Friend } from "@/components/FriendList";
 import { UserSearch } from "@/components/UserSearch";
 import { FriendRequests } from "@/components/FriendRequests";
 import { UserProfile } from "@/components/UserProfile";
+import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { getFriends } from "@/services/supabase";
 import { getCurrentUser } from "@/services/supabase";
+import { getUserGroups, Group } from "@/services/groupChat";
 import { User } from "@/types/user";
 import { useNotificationContext } from "@/components/NotificationProvider";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +19,7 @@ const Home = () => {
   useAIFriendSetup(); // Setup AI friend for user
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const navigate = useNavigate();
   const {
     unreadCounts,
@@ -46,8 +49,11 @@ const Home = () => {
         }));
         setFriends(friendsData);
       });
+      // Load groups
+      const unsubGroups = getUserGroups(user.id, setGroups);
       return () => {
         if (unsubscribe) unsubscribe();
+        if (unsubGroups) unsubGroups();
       };
     };
     initPage();
@@ -109,6 +115,42 @@ const Home = () => {
         {/* Friend Requests Section */}
         <div className="mb-8">
           <FriendRequests />
+        </div>
+
+        {/* Groups Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold">Groups</h3>
+            <CreateGroupDialog onGroupCreated={(id) => navigate(`/group/${id}`)} />
+          </div>
+          {groups.length === 0 ? (
+            <div className="text-center py-6 border border-border rounded-lg">
+              <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No groups yet. Create one!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groups.map(group => (
+                <div
+                  key={group.id}
+                  onClick={() => navigate(`/group/${group.id}`)}
+                  className="bg-card border border-border rounded-lg p-3 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{group.name}</h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {group.description || "Group chat"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Friends Grid */}

@@ -10,6 +10,7 @@ import { PresenceProvider } from "@/components/PresenceProvider";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
+import GroupChat from "./pages/GroupChat";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import NotificationSettings from "./pages/NotificationSettings";
@@ -33,6 +34,7 @@ const App = () => (
                   <Route path="/feed" element={<Feed />} />
                   <Route path="/home" element={<Home />} />
                   <Route path="/chat/:friendId" element={<Chat />} />
+                  <Route path="/group/:groupId" element={<GroupChat />} />
                   <Route path="/profile/:userId" element={<Profile />} />
                   <Route path="/notification-settings" element={<NotificationSettings />} />
                   <Route path="/push-debug" element={<PushDebug />} />
