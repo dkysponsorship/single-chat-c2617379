@@ -34,6 +34,7 @@ const App = () => (
                   <Route path="/feed" element={<Feed />} />
                   <Route path="/home" element={<Home />} />
                   <Route path="/chat/:friendId" element={<Chat />} />
+                  <Route path="/group/:groupId" element={<GroupChat />} />
                   <Route path="/profile/:userId" element={<Profile />} />
                   <Route path="/notification-settings" element={<NotificationSettings />} />
                   <Route path="/push-debug" element={<PushDebug />} />
