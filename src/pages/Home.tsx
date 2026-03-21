@@ -117,6 +117,42 @@ const Home = () => {
           <FriendRequests />
         </div>
 
+        {/* Groups Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold">Groups</h3>
+            <CreateGroupDialog onGroupCreated={(id) => navigate(`/group/${id}`)} />
+          </div>
+          {groups.length === 0 ? (
+            <div className="text-center py-6 border border-border rounded-lg">
+              <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No groups yet. Create one!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groups.map(group => (
+                <div
+                  key={group.id}
+                  onClick={() => navigate(`/group/${group.id}`)}
+                  className="bg-card border border-border rounded-lg p-3 cursor-pointer smooth-transition hover:bg-accent/50 hover:scale-105 hover:shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{group.name}</h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {group.description || "Group chat"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Friends Grid */}
         <div className="mb-8">
           <h3 className="text-xl font-semibold mb-4">Your Friends</h3>
