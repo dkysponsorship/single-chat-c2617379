@@ -54,41 +54,61 @@ export const createGroup = async (
   memberIds: string[]
 ): Promise<Group | null> => {
   try {
-    // Create the group
-    console.log('Creating group with:', { name, description, creatorId, memberIds });
-    const { data: group, error: groupError } = await supabase
+    const now = new Date().toISOString();
+    const groupId = crypto.randomUUID();
+
+    console.log('Creating group with:', { name, description, creatorId, memberIds, groupId });
+
+    const { error: groupError } = await supabase
       .from('groups')
       .insert({
+        id: groupId,
         name,
         description: description || null,
         created_by: creatorId,
-      })
-      .select()
-      .single();
+      });
 
-    if (groupError || !group) {
+    if (groupError) {
       console.error('Error creating group:', groupError);
       return null;
     }
 
-    console.log('Group created:', group);
-
-    // Add creator as admin
-    const membersToInsert = [
-      { group_id: group.id, user_id: creatorId, role: 'admin' },
-      ...memberIds.map(id => ({ group_id: group.id, user_id: id, role: 'member' }))
-    ];
-
-    console.log('Inserting members:', membersToInsert);
-    const { error: membersError } = await supabase
+    const { error: creatorMemberError } = await supabase
       .from('group_members')
-      .insert(membersToInsert);
+      .insert({ group_id: groupId, user_id: creatorId, role: 'admin' });
 
-    if (membersError) {
-      console.error('Error adding members:', membersError);
+    if (creatorMemberError) {
+      console.error('Error adding creator to group:', creatorMemberError);
+      await supabase.from('groups').delete().eq('id', groupId);
+      return null;
     }
 
-    return group as any;
+    if (memberIds.length > 0) {
+      const membersToInsert = memberIds.map(id => ({
+        group_id: groupId,
+        user_id: id,
+        role: 'member',
+      }));
+
+      console.log('Inserting members:', membersToInsert);
+      const { error: membersError } = await supabase
+        .from('group_members')
+        .insert(membersToInsert);
+
+      if (membersError) {
+        console.error('Error adding members:', membersError);
+      }
+    }
+
+    return {
+      id: groupId,
+      name,
+      description: description || null,
+      avatar_url: null,
+      created_by: creatorId,
+      created_at: now,
+      updated_at: now,
+    } as Group;
   } catch (error) {
     console.error('Error creating group:', error);
     return null;
