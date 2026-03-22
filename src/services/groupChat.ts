@@ -55,13 +55,14 @@ export const createGroup = async (
 ): Promise<Group | null> => {
   try {
     // Create the group
+    console.log('Creating group with:', { name, description, creatorId, memberIds });
     const { data: group, error: groupError } = await supabase
       .from('groups')
       .insert({
         name,
         description: description || null,
         created_by: creatorId,
-      } as any)
+      })
       .select()
       .single();
 
@@ -70,15 +71,18 @@ export const createGroup = async (
       return null;
     }
 
+    console.log('Group created:', group);
+
     // Add creator as admin
     const membersToInsert = [
       { group_id: group.id, user_id: creatorId, role: 'admin' },
       ...memberIds.map(id => ({ group_id: group.id, user_id: id, role: 'member' }))
     ];
 
+    console.log('Inserting members:', membersToInsert);
     const { error: membersError } = await supabase
       .from('group_members')
-      .insert(membersToInsert as any);
+      .insert(membersToInsert);
 
     if (membersError) {
       console.error('Error adding members:', membersError);
