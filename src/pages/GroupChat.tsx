@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "@/services/supabase";
 import { getGroupMessages, GroupMessage, Group } from "@/services/groupChat";
 import { GroupChatWindow } from "@/components/GroupChatWindow";
+import { GroupCallScreen } from "@/components/GroupCallScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/user";
+import { useGroupCall, GroupCallType } from "@/hooks/useGroupCall";
 
 const GroupChat = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -12,6 +14,11 @@ const GroupChat = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
+
+  const groupCall = useGroupCall({
+    currentUserId: currentUser?.id || "",
+    groupId: groupId || "",
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -21,7 +28,6 @@ const GroupChat = () => {
 
       if (!groupId) return;
 
-      // Fetch group info
       const { data, error } = await supabase
         .from('groups')
         .select('*')
@@ -34,12 +40,21 @@ const GroupChat = () => {
       }
       setGroup(data as any);
 
-      // Subscribe to messages
       const unsub = getGroupMessages(groupId, setMessages);
       return () => { if (unsub) unsub(); };
     };
     init();
   }, [groupId, navigate]);
+
+  const handleStartCall = (type: "voice" | "video") => {
+    groupCall.startCall(type as GroupCallType);
+  };
+
+  const handleAcceptCall = () => {
+    if (groupCall.callRoomId) {
+      groupCall.joinCall(groupCall.callRoomId, groupCall.incomingCallType);
+    }
+  };
 
   if (!currentUser || !group) {
     return (
@@ -58,8 +73,25 @@ const GroupChat = () => {
           currentUserId={currentUser.id}
           onBack={() => navigate("/home")}
           onGroupDeleted={() => navigate("/home")}
+          onStartCall={handleStartCall}
         />
       </div>
+
+      <GroupCallScreen
+        callState={groupCall.callState}
+        callType={groupCall.callType}
+        groupName={group.name}
+        callDuration={groupCall.callDuration}
+        isMuted={groupCall.isMuted}
+        isCameraOff={groupCall.isCameraOff}
+        localStream={groupCall.localStream}
+        participantStreams={groupCall.participantStreams}
+        onAccept={handleAcceptCall}
+        onDecline={groupCall.declineCall}
+        onEnd={groupCall.endCall}
+        onToggleMute={groupCall.toggleMute}
+        onToggleCamera={groupCall.toggleCamera}
+      />
     </div>
   );
 };
