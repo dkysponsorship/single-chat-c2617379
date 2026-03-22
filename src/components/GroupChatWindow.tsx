@@ -216,23 +216,31 @@ export const GroupChatWindow = ({
             </SheetContent>
           </Sheet>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleLeave} className="text-destructive">
-              <LogOutIcon className="w-4 h-4 mr-2" /> Leave Group
-            </DropdownMenuItem>
-            {isCreator && (
-              <DropdownMenuItem onClick={handleDeleteGroup} className="text-destructive">
-                <Trash2 className="w-4 h-4 mr-2" /> Delete Group
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onStartCall?.("voice")}>
+            <Phone className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onStartCall?.("video")}>
+            <Video className="w-4 h-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLeave} className="text-destructive">
+                <LogOutIcon className="w-4 h-4 mr-2" /> Leave Group
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {isCreator && (
+                <DropdownMenuItem onClick={handleDeleteGroup} className="text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete Group
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Messages */}
