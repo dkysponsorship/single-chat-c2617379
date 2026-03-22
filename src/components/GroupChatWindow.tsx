@@ -18,6 +18,7 @@ interface GroupChatWindowProps {
   currentUserId: string;
   onBack: () => void;
   onGroupDeleted?: () => void;
+  onStartCall?: (type: "voice" | "video") => void;
 }
 
 export const GroupChatWindow = ({
