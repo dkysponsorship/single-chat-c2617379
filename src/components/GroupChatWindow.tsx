@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Send, ArrowLeft, MoreVertical, Trash2, Users, UserPlus, LogOutIcon, Reply, XCircle, Edit2, Check, X } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical, Trash2, Users, UserPlus, LogOutIcon, Reply, XCircle, Edit2, Check, X, Phone, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Group, GroupMember, GroupMessage, getGroupMembers, sendGroupMessage, deleteGroupMessage, editGroupMessage, leaveGroup, deleteGroup, addGroupMember } from "@/services/groupChat";
 import { getFriends, getCurrentUser } from "@/services/supabase";
