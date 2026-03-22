@@ -27,6 +27,7 @@ export const GroupChatWindow = ({
   currentUserId,
   onBack,
   onGroupDeleted,
+  onStartCall,
 }: GroupChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [members, setMembers] = useState<GroupMember[]>([]);
